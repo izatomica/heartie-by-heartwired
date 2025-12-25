@@ -1,0 +1,286 @@
+@import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700&family=Open+Sans:wght@400;500;600&display=swap');
+@import "tailwindcss";
+
+@theme {
+  /* Heartwired Brand Colors */
+  --color-burgundy: #7A2D4D;
+  --color-burgundy-dark: #5E2239;
+  --color-burgundy-light: #9A4D6D;
+  --color-teal-dark: #1B6B6B;
+  --color-teal: #2D8A8A;
+  --color-teal-light: #4BA3A3;
+
+  --color-dusty-pink: #D07080;
+  --color-dusty-pink-light: #F0D5D8;
+  --color-cream: #FCF7F1;
+  --color-cream-dark: #F5F0EB;
+
+  /* Funnel Stage Colors */
+  --color-funnel-awareness: #A8D5E5;
+  --color-funnel-consideration: #9DCDB5;
+  --color-funnel-conversion: #E8C86B;
+  --color-funnel-retention: #C5C0E8;
+
+  /* Text Colors */
+  --color-text-primary: #1A1A1A;
+  --color-text-secondary: #5A5A5A;
+  --color-text-muted: #8A8A8A;
+  --color-text-inverse: #FFFFFF;
+
+  /* Semantic Colors */
+  --color-success: #5A9A6B;
+  --color-success-light: #E5F0E8;
+  --color-warning: #D4A84B;
+  --color-warning-light: #FDF6E3;
+  --color-error: #C06070;
+  --color-error-light: #F8E8EB;
+  --color-info: #4BA3A3;
+  --color-info-light: #E5F2F2;
+
+  /* UI Element Colors */
+  --color-border: #DDD8CC;
+  --color-border-focus: #1B6B6B;
+
+  /* Font Families */
+  --font-headline: 'Bricolage Grotesque', sans-serif;
+  --font-body: 'Open Sans', sans-serif;
+
+  /* Border Radius */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-full: 9999px;
+
+  /* Shadows */
+  --shadow-xs: 0 1px 2px rgba(26, 26, 26, 0.04);
+  --shadow-sm: 0 2px 4px rgba(26, 26, 26, 0.06);
+  --shadow-md: 0 4px 8px rgba(26, 26, 26, 0.08);
+  --shadow-lg: 0 8px 16px rgba(26, 26, 26, 0.10);
+  --shadow-xl: 0 16px 32px rgba(26, 26, 26, 0.12);
+
+  /* Transitions */
+  --transition-fast: 150ms ease-out;
+  --transition-normal: 250ms ease-out;
+  --transition-slow: 350ms ease-out;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--color-text-primary);
+  background-color: var(--color-cream);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-headline);
+  font-weight: 600;
+}
+
+h1 {
+  font-size: 2.5rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+h2 {
+  font-size: 2rem;
+  letter-spacing: -0.01em;
+}
+
+h3 {
+  font-size: 1.5rem;
+}
+
+button {
+  font-family: var(--font-headline);
+}
+
+/* Custom Component Styles */
+.btn-primary {
+  padding: 0.75rem 1.5rem;
+  background-color: var(--color-burgundy);
+  color: white;
+  font-family: var(--font-headline);
+  font-weight: 600;
+  border-radius: var(--radius-md);
+  border: none;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.btn-primary:hover {
+  background-color: var(--color-burgundy-dark);
+}
+
+.btn-primary:active {
+  transform: scale(0.98);
+}
+
+.btn-secondary {
+  padding: 0.625rem 1.375rem;
+  background-color: transparent;
+  border: 2px solid var(--color-burgundy);
+  color: var(--color-burgundy);
+  font-family: var(--font-headline);
+  font-weight: 600;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.btn-secondary:hover {
+  background-color: var(--color-dusty-pink-light);
+}
+
+.btn-ghost {
+  padding: 0.5rem 1rem;
+  background-color: transparent;
+  border: none;
+  color: var(--color-text-primary);
+  font-family: var(--font-body);
+  font-weight: 500;
+  font-size: 0.875rem;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.btn-ghost:hover {
+  background-color: var(--color-cream-dark);
+}
+
+.card {
+  background-color: white;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid transparent;
+}
+
+.card-hover {
+  background-color: white;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  transition: all var(--transition-normal);
+}
+
+.card-hover:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+.input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background-color: white;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-family: var(--font-body);
+  font-size: 1rem;
+  transition: all var(--transition-fast);
+}
+
+.input::placeholder {
+  color: var(--color-text-muted);
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--color-teal-dark);
+  box-shadow: 0 0 0 4px rgba(27, 107, 107, 0.15);
+}
+
+.textarea {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background-color: white;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-family: var(--font-body);
+  font-size: 1rem;
+  min-height: 120px;
+  resize: vertical;
+  transition: all var(--transition-fast);
+}
+
+.textarea:focus {
+  outline: none;
+  border-color: var(--color-teal-dark);
+  box-shadow: 0 0 0 4px rgba(27, 107, 107, 0.15);
+}
+
+.progress-bar {
+  height: 0.5rem;
+  background-color: var(--color-cream-dark);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background-color: var(--color-teal-dark);
+  border-radius: var(--radius-full);
+  transition: width var(--transition-normal);
+}
+
+.tab-active {
+  padding: 0.5rem 1.25rem;
+  background-color: var(--color-teal-dark);
+  color: white;
+  border-radius: var(--radius-full);
+  font-family: var(--font-headline);
+  font-weight: 600;
+}
+
+.tab-inactive {
+  padding: 0.5rem 1.25rem;
+  background-color: transparent;
+  color: var(--color-text-secondary);
+  font-family: var(--font-headline);
+  font-weight: 600;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.tab-inactive:hover {
+  background-color: var(--color-cream-dark);
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.75rem;
+  border-radius: var(--radius-full);
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.badge-idea {
+  background-color: #F5F5F5;
+  color: #9B9B9B;
+}
+
+.badge-draft {
+  background-color: var(--color-warning-light);
+  color: var(--color-warning);
+}
+
+.badge-ready {
+  background-color: var(--color-success-light);
+  color: var(--color-success);
+}
+
+.badge-complete {
+  background-color: var(--color-success-light);
+  color: var(--color-success);
+}
