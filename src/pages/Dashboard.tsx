@@ -1,6 +1,32 @@
+import { useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import { Card } from '../components/ui';
+import { mockActivities, mockWeeklyGoals, mockUser, calculateFunnelHealth } from '../lib/mockData';
+import { FUNNEL_STAGES } from '../types';
 
 export function Dashboard() {
+  const weekActivities = useMemo(() => mockActivities, []);
+  const funnelHealth = useMemo(() => calculateFunnelHealth(weekActivities), [weekActivities]);
+
+  const todayActivities = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return weekActivities.filter((activity) => {
+      const activityDate = new Date(activity.date);
+      activityDate.setHours(0, 0, 0, 0);
+      return activityDate.getTime() === today.getTime() && activity.status !== 'complete';
+    });
+  }, [weekActivities]);
+
+  const completedCount = weekActivities.filter((a) => a.status === 'complete').length;
+  const remainingCount = weekActivities.filter((a) => a.status !== 'complete').length;
+
+  const currentDate = new Date().toLocaleDateString('en-US', {
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+  });
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -8,14 +34,14 @@ export function Dashboard() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-headline font-bold text-text-primary mb-2">
-              Good morning! 👋
+              Good morning, {mockUser.name}! 👋
             </h1>
             <p className="text-text-secondary">
               Here's your marketing snapshot.
             </p>
           </div>
           <div className="text-right text-sm text-text-muted">
-            December 25, 2025
+            {currentDate}
           </div>
         </div>
       </div>
@@ -32,21 +58,20 @@ export function Dashboard() {
           </div>
           <div className="space-y-3 text-text-secondary">
             <div className="flex items-center justify-between">
-              <span>📝 3 posts planned</span>
+              <span>📝 {weekActivities.length} activities planned</span>
             </div>
             <div className="flex items-center justify-between">
-              <span>📧 1 newsletter</span>
+              <span>✅ {completedCount} completed</span>
             </div>
             <div className="flex items-center justify-between">
-              <span>✅ 2 completed</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span>⏳ 2 remaining</span>
+              <span>⏳ {remainingCount} remaining</span>
             </div>
           </div>
-          <button className="mt-4 text-burgundy font-semibold hover:underline">
-            View Calendar →
-          </button>
+          <Link to="/calendar" className="block mt-4">
+            <button className="text-burgundy font-semibold hover:underline">
+              View Calendar →
+            </button>
+          </Link>
         </Card>
 
         {/* Funnel Health Card */}
@@ -58,63 +83,33 @@ export function Dashboard() {
             </h2>
           </div>
           <div className="space-y-3">
-            {/* Getting Seen */}
-            <div>
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-sm font-medium text-text-primary">
-                  🟦 Getting Seen
-                </span>
-                <span className="text-sm text-text-muted">80%</span>
-              </div>
-              <div className="progress-bar">
-                <div className="progress-fill" style={{ width: '80%', backgroundColor: '#A8D5E5' }}></div>
-              </div>
-            </div>
-
-            {/* Building Trust */}
-            <div>
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-sm font-medium text-text-primary">
-                  🟩 Building Trust
-                </span>
-                <span className="text-sm text-text-muted">60%</span>
-              </div>
-              <div className="progress-bar">
-                <div className="progress-fill" style={{ width: '60%', backgroundColor: '#9DCDB5' }}></div>
-              </div>
-            </div>
-
-            {/* Making the Ask */}
-            <div>
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-sm font-medium text-text-primary">
-                  🟨 Making the Ask
-                </span>
-                <span className="text-sm text-text-muted">20%</span>
-              </div>
-              <div className="progress-bar">
-                <div className="progress-fill" style={{ width: '20%', backgroundColor: '#E8C86B' }}></div>
-              </div>
-            </div>
-
-            {/* Keeping Connected */}
-            <div>
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-sm font-medium text-text-primary">
-                  🟪 Keeping Connected
-                </span>
-                <span className="text-sm text-text-muted">0%</span>
-              </div>
-              <div className="progress-bar">
-                <div className="progress-fill" style={{ width: '0%', backgroundColor: '#C5C0E8' }}></div>
-              </div>
-            </div>
+            {Object.entries(FUNNEL_STAGES).map(([stage, info]) => {
+              const percentage = funnelHealth[stage as keyof typeof funnelHealth];
+              return (
+                <div key={stage}>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-sm font-medium text-text-primary">
+                      {info.emoji} {info.name}
+                    </span>
+                    <span className="text-sm text-text-muted">{percentage}%</span>
+                  </div>
+                  <div className="progress-bar">
+                    <div
+                      className="progress-fill"
+                      style={{ width: `${percentage}%`, backgroundColor: info.color }}
+                    ></div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
-          <div className="mt-4 p-3 bg-warning-light rounded-lg">
-            <p className="text-sm text-warning">
-              ⚠️ Add conversion content to balance your funnel
-            </p>
-          </div>
+          {funnelHealth.conversion < 20 && (
+            <div className="mt-4 p-3 bg-warning-light rounded-lg">
+              <p className="text-sm text-warning">
+                ⚠️ Add conversion content to balance your funnel
+              </p>
+            </div>
+          )}
         </Card>
       </div>
 
@@ -126,28 +121,106 @@ export function Dashboard() {
             TODAY'S FOCUS
           </h2>
         </div>
-        <div className="space-y-3">
-          <div className="p-4 bg-white border-l-4 border-funnel-awareness rounded-lg shadow-sm">
-            <div className="flex items-center justify-between">
-              <div className="flex-1">
-                <h3 className="font-semibold text-text-primary mb-1">
-                  LinkedIn Post
-                </h3>
-                <p className="text-sm text-text-secondary">
-                  Topic: Behind-the-scenes
-                </p>
-                <span className="badge-draft mt-2">Draft</span>
-              </div>
-              <div className="flex gap-2">
-                <button className="btn-ghost">Open</button>
-                <button className="btn-primary">Complete</button>
-              </div>
-            </div>
+        {todayActivities.length > 0 ? (
+          <div className="space-y-3">
+            {todayActivities.map((activity) => {
+              const stageInfo = FUNNEL_STAGES[activity.funnelStage];
+              const badgeClass =
+                activity.status === 'idea'
+                  ? 'badge-idea'
+                  : activity.status === 'draft'
+                  ? 'badge-draft'
+                  : 'badge-ready';
+
+              return (
+                <div
+                  key={activity.id}
+                  className="p-4 bg-white border-l-4 rounded-lg shadow-sm"
+                  style={{ borderColor: stageInfo.color }}
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-text-primary mb-1">
+                        {activity.title}
+                      </h3>
+                      {activity.contentPillar && (
+                        <p className="text-sm text-text-secondary">
+                          Topic: {activity.contentPillar}
+                        </p>
+                      )}
+                      <span className={`${badgeClass} mt-2`}>
+                        {activity.status.charAt(0).toUpperCase() + activity.status.slice(1)}
+                      </span>
+                    </div>
+                    <div className="flex gap-2">
+                      <button className="btn-ghost">Open</button>
+                      <button className="btn-primary">Complete</button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
-        </div>
+        ) : (
+          <div className="text-center py-8 text-text-muted">
+            <p>No activities scheduled for today. You're all caught up! ✨</p>
+          </div>
+        )}
       </Card>
 
-      {/* Framework Health */}
+      {/* Weekly Goals */}
+      <Card>
+        <div className="flex items-center gap-2 mb-4">
+          <span className="text-2xl">🎯</span>
+          <h2 className="text-lg font-headline font-semibold text-text-primary">
+            WEEKLY GOALS
+          </h2>
+        </div>
+        <div className="space-y-4">
+          {mockWeeklyGoals.map((goal) => {
+            const progress = goal.targetCount
+              ? Math.round((goal.currentCount / goal.targetCount) * 100)
+              : 0;
+            const isComplete = goal.isComplete || progress >= 100;
+
+            return (
+              <div key={goal.id}>
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    {isComplete ? (
+                      <span className="text-success">✓</span>
+                    ) : (
+                      <span className="text-text-muted">○</span>
+                    )}
+                    <span className="text-sm font-medium text-text-primary">
+                      {goal.title}
+                    </span>
+                  </div>
+                  <span className="text-sm text-text-muted">
+                    {goal.currentCount}/{goal.targetCount}
+                  </span>
+                </div>
+                <div className="progress-bar">
+                  <div
+                    className="progress-fill"
+                    style={{
+                      width: `${Math.min(progress, 100)}%`,
+                      backgroundColor: isComplete ? '#5A9A6B' : '#1B6B6B',
+                    }}
+                  ></div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        <Link to="/goals" className="block mt-4">
+          <button className="text-burgundy font-semibold hover:underline">
+            View All Goals →
+          </button>
+        </Link>
+      </Card>
+
+      {/* Framework Health & Heartie's Corner */}
       <div className="grid md:grid-cols-2 gap-6">
         <Card>
           <div className="flex items-center gap-2 mb-4">
@@ -203,9 +276,11 @@ export function Dashboard() {
               </div>
             </div>
           </div>
-          <button className="mt-4 text-burgundy font-semibold hover:underline">
-            Continue Building →
-          </button>
+          <Link to="/strategy" className="block mt-4">
+            <button className="text-burgundy font-semibold hover:underline">
+              Continue Building →
+            </button>
+          </Link>
         </Card>
 
         <Card>
@@ -221,7 +296,7 @@ export function Dashboard() {
             </div>
             <div className="flex-1">
               <p className="text-text-secondary mb-3">
-                "You've been consistent for 2 weeks! Keep it up! 🌸"
+                "You've completed {completedCount} activities this week! Keep up the great work! 🌸"
               </p>
               <button className="btn-secondary text-sm">
                 Thanks, Heartie!
