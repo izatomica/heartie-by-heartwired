@@ -1,73 +1,149 @@
-# React + TypeScript + Vite
+# Heartie - Marketing Planner by Heartwired
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A web-based marketing planning SaaS platform for female solopreneurs. Built with React, TypeScript, and Tailwind CSS.
 
-Currently, two official plugins are available:
+## Overview
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+Heartie helps solopreneurs:
+- Build strategic marketing foundations through guided questionnaires (7 categories)
+- Plan quarterly marketing using a drag-and-drop calendar
+- Track activities across a 4-stage marketing funnel
+- Generate AI content that matches their unique voice
+- Access a template library organized by funnel stage
+- Get guidance from an AI assistant called "Heartie"
 
-## React Compiler
+## Tech Stack
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- **Frontend**: React 19 + TypeScript
+- **Styling**: Tailwind CSS v4
+- **Routing**: React Router v6
+- **Build Tool**: Vite 7
+- **Backend**: Supabase (planned)
 
-## Expanding the ESLint configuration
+## Design System
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+### Brand Colors
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```css
+--color-burgundy: #7A2D4D        /* Primary buttons, CTAs */
+--color-teal-dark: #1B6B6B       /* Active tabs, progress bars */
+--color-dusty-pink: #D07080      /* Soft highlights */
+--color-cream: #FCF7F1           /* Main background */
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+### Typography
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+- **Headlines**: Bricolage Grotesque (600-700 weight)
+- **Body**: Open Sans (400-600 weight)
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+### Funnel Stage Colors
+
+- **Getting Seen**: #A8D5E5 (Sky Blue)
+- **Building Trust**: #9DCDB5 (Sage/Mint)
+- **Making the Ask**: #E8C86B (Gold/Mustard)
+- **Keeping Connected**: #C5C0E8 (Lavender)
+
+## Project Structure
+
 ```
+src/
+├── components/
+│   ├── layout/       # Header, Layout
+│   └── ui/           # Button, Input, Card, Modal
+├── pages/            # Dashboard, Calendar, Goals, Strategy, Templates, Insights
+├── lib/              # Utilities and helpers
+├── types/            # TypeScript type definitions
+└── hooks/            # Custom React hooks
+```
+
+## Getting Started
+
+### Prerequisites
+
+- Node.js 18+
+- npm or yarn
+
+### Installation
+
+```bash
+# Install dependencies
+npm install
+
+# Run development server
+npm run dev
+
+# Build for production
+npm run build
+
+# Preview production build
+npm run preview
+```
+
+### Development Server
+
+The app will be available at `http://localhost:5173`
+
+## Features (In Development)
+
+### Phase 1: Foundation ✅
+- [x] Project setup with React + TypeScript + Tailwind
+- [x] Design system configuration
+- [x] Base UI components
+- [x] App shell with routing
+- [x] Dashboard view (basic)
+
+### Phase 2: Core Features
+- [ ] Full Dashboard implementation
+- [ ] Calendar view with drag-and-drop
+- [ ] Activity management
+
+### Phase 3: Goals & Strategy
+- [ ] Goals view (Annual/Quarterly/Weekly)
+- [ ] Strategy view (7 categories)
+- [ ] 3-layer framework visualization
+
+### Phase 4: Templates & AI
+- [ ] Template library
+- [ ] AI content generation
+- [ ] Heartie AI assistant
+
+### Phase 5: Polish
+- [ ] Insights view
+- [ ] Onboarding flow
+- [ ] Responsive mobile design
+- [ ] Animations and micro-interactions
+
+## The 3-Layer Framework
+
+Heartie is built on a strategic framework that separates strategy from tactics:
+
+1. **Layer 1: Brand Strategy** - Who you serve & why you matter
+   - Your Customer
+   - Your Position
+   - Your Messaging
+
+2. **Layer 2: Marketing Strategy** - Where you show up & how you sound
+   - Your Voice
+   - Your Reality
+   - Your Landscape
+
+3. **Layer 3: Marketing Plan** - What you do & when you do it
+   - Your Big Plans
+   - Calendar
+   - Activities
+
+## Design Philosophy
+
+- **Warm, organic, calm**: Human-first design with soft curves
+- **No sharp angles**: All UI elements use rounded corners
+- **Generous spacing**: Ample white space for clarity
+- **Supportive tone**: Friendly and encouraging, never pushy
+- **Cream background**: #FCF7F1 instead of pure white
+
+## Contributing
+
+This is a private project. For questions or suggestions, please contact the development team.
+
+## License
+
+Proprietary - All rights reserved
