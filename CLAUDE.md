@@ -13,13 +13,25 @@ The app is built around a **3-layer strategic framework**:
 
 Activities are organized by a **4-stage marketing funnel**: Getting Seen (awareness), Building Trust (consideration), Making the Ask (conversion), Keeping Connected (retention).
 
-## Development Commands
+## Local Development Setup
+
+**IMPORTANT: Always run the dev server locally after making changes to verify they work before pushing.**
+
+### Prerequisites
+
+Node.js 20 is installed via Homebrew at `/opt/homebrew/opt/node@20/bin`. Add to PATH:
+```bash
+echo 'export PATH="/opt/homebrew/opt/node@20/bin:$PATH"' >> ~/.zshrc
+source ~/.zshrc
+```
+
+### Development Commands
 
 ```bash
-# Development
+# Development (run after every change to verify)
 npm run dev          # Start dev server at http://localhost:5173
 
-# Production build
+# Production build (run before pushing to catch TypeScript errors)
 npm run build        # TypeScript compile + Vite build
 npm start            # Start production server at http://localhost:3000
 npm run preview      # Preview production build
@@ -27,6 +39,13 @@ npm run preview      # Preview production build
 # Linting
 npm run lint         # Run ESLint
 ```
+
+### Workflow
+
+1. Make code changes
+2. Run `npm run dev` to test locally at http://localhost:5173
+3. Run `npm run build` to verify no TypeScript errors
+4. Commit and push to deploy to Railway
 
 ## Database & Backend
 
