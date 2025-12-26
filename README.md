@@ -75,6 +75,9 @@ npm run dev
 # Build for production
 npm run build
 
+# Start production server
+npm start
+
 # Preview production build
 npm run preview
 ```
@@ -83,35 +86,56 @@ npm run preview
 
 The app will be available at `http://localhost:5173`
 
-## Features (In Development)
+### Production Server
+
+After building, start the production server:
+```bash
+npm run build
+npm start
+```
+The app will be available at `http://localhost:3000`
+
+## Features
 
 ### Phase 1: Foundation ✅
 - [x] Project setup with React + TypeScript + Tailwind
 - [x] Design system configuration
-- [x] Base UI components
+- [x] Base UI components (Button, Input, Card, Modal)
 - [x] App shell with routing
-- [x] Dashboard view (basic)
+- [x] Dashboard view with weekly summary
 
-### Phase 2: Core Features
-- [ ] Full Dashboard implementation
-- [ ] Calendar view with drag-and-drop
-- [ ] Activity management
+### Phase 2: Core Features ✅
+- [x] Full Dashboard implementation with funnel health
+- [x] Calendar view with drag-and-drop functionality
+- [x] Activity management (Create, Edit, Delete)
+- [x] Activity detail panel and add modal
+- [x] Weekly navigation and filtering
 
-### Phase 3: Goals & Strategy
-- [ ] Goals view (Annual/Quarterly/Weekly)
-- [ ] Strategy view (7 categories)
-- [ ] 3-layer framework visualization
+### Phase 3: Goals & Strategy ✅
+- [x] Goals view (Annual/Quarterly/Weekly tabs)
+- [x] Strategy view (7 categories across 3 layers)
+- [x] 3-layer framework visualization
+- [x] Progress tracking and completion states
 
-### Phase 4: Templates & AI
-- [ ] Template library
-- [ ] AI content generation
-- [ ] Heartie AI assistant
+### Phase 4: Templates ✅
+- [x] Template library with 12 professional templates
+- [x] Filtering by funnel stage and platform
+- [x] Template preview and search
+- [ ] AI content generation (future)
+- [ ] Heartie AI assistant (future)
 
-### Phase 5: Polish
-- [ ] Insights view
-- [ ] Onboarding flow
-- [ ] Responsive mobile design
-- [ ] Animations and micro-interactions
+### Phase 5: Polish ✅
+- [x] Insights view with comprehensive analytics
+- [x] Onboarding flow (6 steps)
+- [x] Responsive mobile design
+- [x] Enhanced animations and micro-interactions
+- [x] Custom scrollbar and accessibility features
+
+### Deployment Ready ✅
+- [x] Production server with Express
+- [x] Railway configuration
+- [x] Build optimization
+- [x] Deployment documentation
 
 ## The 3-Layer Framework
 
@@ -139,6 +163,35 @@ Heartie is built on a strategic framework that separates strategy from tactics:
 - **Generous spacing**: Ample white space for clarity
 - **Supportive tone**: Friendly and encouraging, never pushy
 - **Cream background**: #FCF7F1 instead of pure white
+
+## Deployment
+
+### Deploy to Railway
+
+Heartie is configured for one-click deployment to Railway:
+
+1. Push code to GitHub
+2. Connect repository to Railway
+3. Railway automatically:
+   - Detects Node.js 20
+   - Runs `npm ci` to install dependencies
+   - Runs `npm run build` to build the app
+   - Runs `npm start` to serve the app
+
+**📖 For detailed deployment instructions, see [DEPLOYMENT.md](./DEPLOYMENT.md)**
+
+### Configuration Files
+
+- `server.js` - Express server for production
+- `nixpacks.toml` - Railway build configuration
+- `.nvmrc` - Node.js version specification
+- `.railwayignore` - Files to exclude from deployment
+
+### Environment Variables
+
+Currently runs entirely on frontend. Future backend integration (Supabase) will require:
+- `VITE_SUPABASE_URL`
+- `VITE_SUPABASE_ANON_KEY`
 
 ## Contributing
 

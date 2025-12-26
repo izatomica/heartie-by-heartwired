@@ -1,0 +1,40 @@
+# Railway Ignore File
+# Files and directories to exclude from Railway deployment
+
+# Development files
+.git
+.github
+.vscode
+.idea
+
+# Node modules (will be installed fresh)
+node_modules
+
+# Environment files
+.env.local
+.env.development
+
+# Build cache
+.vite
+.turbo
+.next
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Testing
+coverage
+.nyc_output
+
+# Documentation (optional - remove if you want docs deployed)
+*.md
+!DEPLOYMENT.md
+
+# Development only files
+.eslintrc*
+.prettierrc*
+vite.config.ts.timestamp*
