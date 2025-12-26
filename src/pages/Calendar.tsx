@@ -6,6 +6,8 @@ import type { Activity, FunnelStage } from '../types';
 import { FUNNEL_STAGES } from '../types';
 import { mockActivities } from '../lib/mockData';
 import { ActivityCard } from '../components/calendar/ActivityCard';
+import { ActivityDetailPanel } from '../components/calendar/ActivityDetailPanel';
+import { AddActivityModal } from '../components/calendar/AddActivityModal';
 import { Card } from '../components/ui';
 
 export function Calendar() {
@@ -17,6 +19,10 @@ export function Calendar() {
     new Set(['awareness', 'consideration', 'conversion', 'retention'])
   );
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null);
+  const [isDetailPanelOpen, setIsDetailPanelOpen] = useState(false);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [addModalInitialDate, setAddModalInitialDate] = useState<Date | undefined>(undefined);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -70,6 +76,39 @@ export function Calendar() {
         )
       );
     }
+  };
+
+  const handleActivityClick = (activity: Activity) => {
+    setSelectedActivity(activity);
+    setIsDetailPanelOpen(true);
+  };
+
+  const handleAddActivity = (date: Date) => {
+    setAddModalInitialDate(date);
+    setIsAddModalOpen(true);
+  };
+
+  const handleSaveActivity = (updatedActivity: Activity) => {
+    setActivities((prev) =>
+      prev.map((activity) =>
+        activity.id === updatedActivity.id ? updatedActivity : activity
+      )
+    );
+  };
+
+  const handleDeleteActivity = (activityId: string) => {
+    setActivities((prev) => prev.filter((activity) => activity.id !== activityId));
+  };
+
+  const handleCreateActivity = (newActivityData: Omit<Activity, 'id' | 'userId' | 'createdAt' | 'updatedAt'>) => {
+    const newActivity: Activity = {
+      ...newActivityData,
+      id: `act-${Date.now()}`,
+      userId: 'user-1',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    setActivities((prev) => [...prev, newActivity]);
   };
 
   const activeActivity = activeId ? activities.find((a) => a.id === activeId) : null;
@@ -194,17 +233,17 @@ export function Calendar() {
                         e.dataTransfer.setData('activityId', activity.id);
                       }}
                     >
-                      <ActivityCard activity={activity} />
+                      <ActivityCard
+                        activity={activity}
+                        onClick={() => handleActivityClick(activity)}
+                      />
                     </div>
                   ))}
 
                   {/* Add Activity Button */}
                   <button
                     className="w-full py-2 text-text-muted hover:text-burgundy hover:bg-cream-dark rounded-md transition-colors text-sm font-medium"
-                    onClick={() => {
-                      // TODO: Open add activity modal
-                      console.log('Add activity for', format(day, 'yyyy-MM-dd'));
-                    }}
+                    onClick={() => handleAddActivity(day)}
                   >
                     + Add
                   </button>
@@ -276,6 +315,29 @@ export function Calendar() {
           </div>
         </div>
       </Card>
+
+      {/* Activity Detail Panel */}
+      <ActivityDetailPanel
+        activity={selectedActivity}
+        isOpen={isDetailPanelOpen}
+        onClose={() => {
+          setIsDetailPanelOpen(false);
+          setSelectedActivity(null);
+        }}
+        onSave={handleSaveActivity}
+        onDelete={handleDeleteActivity}
+      />
+
+      {/* Add Activity Modal */}
+      <AddActivityModal
+        isOpen={isAddModalOpen}
+        onClose={() => {
+          setIsAddModalOpen(false);
+          setAddModalInitialDate(undefined);
+        }}
+        onSave={handleCreateActivity}
+        initialDate={addModalInitialDate}
+      />
     </div>
   );
 }
