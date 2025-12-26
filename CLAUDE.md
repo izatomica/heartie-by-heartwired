@@ -47,6 +47,26 @@ npm run lint         # Run ESLint
 3. Run `npm run build` to verify no TypeScript errors
 4. Commit and push to deploy to Railway
 
+## Claude Workflow Rules
+
+**IMPORTANT: Follow these rules when making changes.**
+
+### Git & Deployment
+- **DO NOT auto-commit or push.** The user will run git commands manually.
+- Only commit when explicitly asked by the user.
+
+### Dev Server Management
+- After making code changes, run `npm run dev` to restart the dev server.
+- The predev script automatically kills previous Vite instances.
+- Dev server always runs at http://localhost:5173 (fixed port).
+- Do NOT start multiple dev server instances.
+
+### Testing Changes
+1. Make code changes
+2. Run `npm run dev` (kills previous instance, starts fresh on port 5173)
+3. User tests in browser at http://localhost:5173
+4. User manually commits when ready
+
 ## Database & Backend
 
 ### Current State: Mock Data Transitioning to Supabase
