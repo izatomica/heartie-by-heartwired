@@ -114,13 +114,13 @@ export function Calendar() {
   const activeActivity = activeId ? activities.find((a) => a.id === activeId) : null;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-headline font-bold text-text-primary mb-2">
+        <h1 className="text-2xl sm:text-3xl font-headline font-bold text-text-primary mb-2">
           Calendar
         </h1>
-        <p className="text-text-secondary">
+        <p className="text-sm sm:text-base text-text-secondary">
           Plan your marketing activities week by week.
         </p>
       </div>
@@ -129,24 +129,24 @@ export function Calendar() {
       <Card padding="md">
         <div className="space-y-4">
           {/* Week Navigation */}
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-2">
             <button
               onClick={() => setCurrentWeekStart((prev) => subWeeks(prev, 1))}
-              className="btn-ghost flex items-center gap-1"
+              className="btn-ghost flex items-center gap-1 text-sm sm:text-base"
             >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
-              Prev
+              <span className="hidden sm:inline">Prev</span>
             </button>
-            <h2 className="font-headline font-semibold text-lg text-text-primary">
-              {format(currentWeekStart, 'MMMM d')} - {format(addDays(currentWeekStart, 6), 'MMMM d, yyyy')}
+            <h2 className="font-headline font-semibold text-sm sm:text-lg text-text-primary text-center">
+              {format(currentWeekStart, 'MMM d')} - {format(addDays(currentWeekStart, 6), 'MMM d, yyyy')}
             </h2>
             <button
               onClick={() => setCurrentWeekStart((prev) => addWeeks(prev, 1))}
-              className="btn-ghost flex items-center gap-1"
+              className="btn-ghost flex items-center gap-1 text-sm sm:text-base"
             >
-              Next
+              <span className="hidden sm:inline">Next</span>
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
               </svg>
@@ -195,7 +195,7 @@ export function Calendar() {
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
       >
-        <div className="grid grid-cols-7 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-7 gap-2 sm:gap-3">
           {weekDays.map((day) => {
             const isToday = isSameDay(day, new Date());
             const dayActivities = getActivitiesForDay(day);
@@ -204,21 +204,26 @@ export function Calendar() {
             return (
               <div
                 key={dateStr}
-                className={`min-h-[200px] rounded-lg border-2 p-3 ${
+                className={`min-h-[180px] sm:min-h-[200px] rounded-lg border-2 p-2 sm:p-3 ${
                   isToday ? 'bg-dusty-pink-light border-dusty-pink' : 'bg-white border-border'
                 }`}
               >
                 {/* Day Header */}
-                <div className="mb-3">
-                  <div className="text-xs font-medium text-text-muted uppercase">
-                    {format(day, 'EEE')}
+                <div className="mb-2 sm:mb-3 flex sm:block items-center justify-between">
+                  <div className="flex items-center gap-2 sm:block">
+                    <div className="text-xs font-medium text-text-muted uppercase">
+                      {format(day, 'EEE')}
+                    </div>
+                    <div
+                      className={`text-xl sm:text-2xl font-headline font-bold ${
+                        isToday ? 'text-burgundy' : 'text-text-primary'
+                      }`}
+                    >
+                      {format(day, 'd')}
+                    </div>
                   </div>
-                  <div
-                    className={`text-2xl font-headline font-bold ${
-                      isToday ? 'text-burgundy' : 'text-text-primary'
-                    }`}
-                  >
-                    {format(day, 'd')}
+                  <div className="text-xs text-text-muted sm:hidden">
+                    {format(day, 'MMM')}
                   </div>
                 </div>
 
@@ -288,7 +293,7 @@ export function Calendar() {
 
       {/* Summary Stats */}
       <Card>
-        <div className="flex items-center justify-between">
+        <div className="space-y-4">
           <div>
             <h3 className="font-headline font-semibold text-text-primary">
               This Week Summary
@@ -297,13 +302,13 @@ export function Calendar() {
               {filteredActivities.length} activities planned
             </p>
           </div>
-          <div className="flex gap-4">
+          <div className="flex flex-wrap gap-3 sm:gap-4 justify-center sm:justify-start">
             {Object.entries(FUNNEL_STAGES).map(([stage, info]) => {
               const count = filteredActivities.filter((a) => a.funnelStage === stage).length;
               return (
                 <div key={stage} className="text-center">
                   <div
-                    className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold mb-1"
+                    className="w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center text-white font-bold mb-1"
                     style={{ backgroundColor: info.color }}
                   >
                     {count}
