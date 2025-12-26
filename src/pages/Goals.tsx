@@ -609,18 +609,20 @@ export function Goals() {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-text-primary mb-1">Revenue Target ($)</label>
-              <Input
+              <input
                 type="number"
+                className="input w-full"
                 value={annualForm.revenueTarget}
-                onChange={(e) => setAnnualForm(prev => ({ ...prev, revenueTarget: Number(e.target.value) }))}
+                onChange={(e) => setAnnualForm(prev => ({ ...prev, revenueTarget: Number(e.target.value) || 0 }))}
               />
             </div>
             <div>
               <label className="block text-sm font-medium text-text-primary mb-1">Revenue Current ($)</label>
-              <Input
+              <input
                 type="number"
+                className="input w-full"
                 value={annualForm.revenueCurrent}
-                onChange={(e) => setAnnualForm(prev => ({ ...prev, revenueCurrent: Number(e.target.value) }))}
+                onChange={(e) => setAnnualForm(prev => ({ ...prev, revenueCurrent: Number(e.target.value) || 0 }))}
               />
             </div>
           </div>
@@ -628,18 +630,20 @@ export function Goals() {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-text-primary mb-1">LinkedIn Target (followers)</label>
-              <Input
+              <input
                 type="number"
+                className="input w-full"
                 value={annualForm.linkedinTarget}
-                onChange={(e) => setAnnualForm(prev => ({ ...prev, linkedinTarget: Number(e.target.value) }))}
+                onChange={(e) => setAnnualForm(prev => ({ ...prev, linkedinTarget: Number(e.target.value) || 0 }))}
               />
             </div>
             <div>
               <label className="block text-sm font-medium text-text-primary mb-1">LinkedIn Current</label>
-              <Input
+              <input
                 type="number"
+                className="input w-full"
                 value={annualForm.linkedinCurrent}
-                onChange={(e) => setAnnualForm(prev => ({ ...prev, linkedinCurrent: Number(e.target.value) }))}
+                onChange={(e) => setAnnualForm(prev => ({ ...prev, linkedinCurrent: Number(e.target.value) || 0 }))}
               />
             </div>
           </div>
@@ -647,18 +651,20 @@ export function Goals() {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-text-primary mb-1">Email List Target</label>
-              <Input
+              <input
                 type="number"
+                className="input w-full"
                 value={annualForm.emailTarget}
-                onChange={(e) => setAnnualForm(prev => ({ ...prev, emailTarget: Number(e.target.value) }))}
+                onChange={(e) => setAnnualForm(prev => ({ ...prev, emailTarget: Number(e.target.value) || 0 }))}
               />
             </div>
             <div>
               <label className="block text-sm font-medium text-text-primary mb-1">Email List Current</label>
-              <Input
+              <input
                 type="number"
+                className="input w-full"
                 value={annualForm.emailCurrent}
-                onChange={(e) => setAnnualForm(prev => ({ ...prev, emailCurrent: Number(e.target.value) }))}
+                onChange={(e) => setAnnualForm(prev => ({ ...prev, emailCurrent: Number(e.target.value) || 0 }))}
               />
             </div>
           </div>
@@ -666,18 +672,20 @@ export function Goals() {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-text-primary mb-1">Launches Target</label>
-              <Input
+              <input
                 type="number"
+                className="input w-full"
                 value={annualForm.launchesTarget}
-                onChange={(e) => setAnnualForm(prev => ({ ...prev, launchesTarget: Number(e.target.value) }))}
+                onChange={(e) => setAnnualForm(prev => ({ ...prev, launchesTarget: Number(e.target.value) || 0 }))}
               />
             </div>
             <div>
               <label className="block text-sm font-medium text-text-primary mb-1">Launches Current</label>
-              <Input
+              <input
                 type="number"
+                className="input w-full"
                 value={annualForm.launchesCurrent}
-                onChange={(e) => setAnnualForm(prev => ({ ...prev, launchesCurrent: Number(e.target.value) }))}
+                onChange={(e) => setAnnualForm(prev => ({ ...prev, launchesCurrent: Number(e.target.value) || 0 }))}
               />
             </div>
           </div>
