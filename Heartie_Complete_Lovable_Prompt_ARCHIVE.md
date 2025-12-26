@@ -1,6 +1,10 @@
 # HEARTIE - MARKETING PLANNER BY HEARTWIRED
 ## Complete Vibe Coding Specification for Lovable
 
+> **⚠️ ARCHIVE NOTICE:** This file has been superseded by the organized documentation in the `docs/` directory.
+> Please refer to `docs/README.md` for the current, well-structured documentation.
+> This archive is kept for historical reference only.
+
 ---
 
 # SECTION 1: PROJECT OVERVIEW
