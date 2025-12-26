@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Layout } from './components/layout/Layout';
 import { Onboarding } from './components/Onboarding';
+import { SupabaseHealthIndicator } from './components/SupabaseHealthIndicator';
 import { Dashboard } from './pages/Dashboard';
 import { Calendar } from './pages/Calendar';
 import { Goals } from './pages/Goals';
@@ -34,6 +35,7 @@ function App() {
     return (
       <BrowserRouter>
         <Onboarding onComplete={handleOnboardingComplete} />
+        <SupabaseHealthIndicator />
       </BrowserRouter>
     );
   }
@@ -51,6 +53,7 @@ function App() {
           <Route path="/insights" element={<Insights />} />
         </Routes>
       </Layout>
+      <SupabaseHealthIndicator />
     </BrowserRouter>
   );
 }
