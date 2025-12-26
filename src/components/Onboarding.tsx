@@ -1,545 +1,406 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, Button } from './ui';
+import { useAuth } from '@/contexts/AuthContext';
+import { Card, Button, Input, RadioGroup, PhotoUpload } from './ui';
+import type { BusinessType, BusinessStage } from '@/types/auth';
 
 interface OnboardingStep {
   id: string;
   title: string;
-  description: string;
-  icon: string;
   content: React.ReactNode;
 }
 
-interface OnboardingProps {
-  onComplete: () => void;
-}
-
-export function Onboarding({ onComplete }: OnboardingProps) {
+export function Onboarding() {
   const [currentStep, setCurrentStep] = useState(0);
-  const [userInfo, setUserInfo] = useState({
-    name: '',
+  const [isLoading, setIsLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    displayName: '',
     businessName: '',
-    industry: '',
-    mainGoal: '',
+    businessDescription: '',
+    website: '',
+    businessType: '' as BusinessType | '',
+    businessStage: '' as BusinessStage | '',
   });
   const navigate = useNavigate();
+  const { user, updateProfile, uploadProfilePhoto } = useAuth();
+
+  const handleNext = async () => {
+    setIsLoading(true);
+
+    // Save progress at each step
+    await updateProfile({
+      displayName: formData.displayName || undefined,
+      businessName: formData.businessName || undefined,
+      businessDescription: formData.businessDescription || undefined,
+      website: formData.website || undefined,
+      businessType: formData.businessType || undefined,
+      businessStage: formData.businessStage || undefined,
+      onboardingStep: currentStep + 1,
+    });
+
+    if (currentStep < steps.length - 1) {
+      setCurrentStep(currentStep + 1);
+    } else {
+      // Complete onboarding
+      await updateProfile({ onboardingComplete: true });
+      navigate('/dashboard', { replace: true });
+    }
+
+    setIsLoading(false);
+  };
+
+  const handleBack = () => {
+    if (currentStep > 0) setCurrentStep(currentStep - 1);
+  };
+
+  const handleSkip = async () => {
+    setIsLoading(true);
+    await updateProfile({ onboardingComplete: true });
+    navigate('/dashboard', { replace: true });
+    setIsLoading(false);
+  };
+
+  const handlePhotoUpload = async (file: File) => {
+    await uploadProfilePhoto(file);
+  };
 
   const steps: OnboardingStep[] = [
+    // Step 1: Welcome / Heartie Introduction
     {
       id: 'welcome',
-      title: 'Welcome to Heartie! 🌸',
-      description: 'Your marketing planner designed for female solopreneurs',
-      icon: '🌸',
+      title: 'Welcome to Heartie!',
       content: (
-        <div className="text-center space-y-6 py-8">
-          <div className="text-8xl mb-4">🌸</div>
-          <h2 className="text-3xl font-headline font-bold text-text-primary mb-4">
-            Welcome to Heartie
-          </h2>
-          <p className="text-lg text-text-secondary max-w-2xl mx-auto">
-            Finally, a marketing planner that feels like it was built just for you.
-          </p>
-          <p className="text-text-secondary max-w-2xl mx-auto">
-            Heartie helps you plan, create, and track your marketing with clarity and confidence—
-            without the overwhelm. Let's get you set up in just a few minutes.
-          </p>
-          <div className="pt-6">
-            <Button onClick={() => setCurrentStep(1)}>
-              Let's Get Started →
-            </Button>
+        <div className="text-center py-12">
+          {/* Heartie Avatar */}
+          <div className="w-32 h-32 mx-auto mb-8 rounded-full bg-dusty-pink-light flex items-center justify-center">
+            <span className="text-6xl">🌸</span>
           </div>
-        </div>
-      ),
-    },
-    {
-      id: 'user-info',
-      title: 'Tell us about yourself',
-      description: 'Help us personalize your experience',
-      icon: '👋',
-      content: (
-        <div className="space-y-6 max-w-xl mx-auto">
-          <div className="text-center mb-8">
-            <div className="text-6xl mb-4">👋</div>
-            <h2 className="text-2xl font-headline font-bold text-text-primary mb-2">
-              Nice to meet you!
-            </h2>
-            <p className="text-text-secondary">
-              Tell us a bit about yourself so we can personalize Heartie for you.
+
+          <h1 className="font-headline text-3xl font-semibold text-text-primary mb-4">
+            Hey! I'm Heartie
+          </h1>
+
+          <p className="text-lg text-text-secondary mb-4 max-w-md mx-auto">
+            I'm your marketing companion. Not a guru. Not a bot. Just... help.
+          </p>
+
+          <p className="text-text-secondary mb-8 max-w-md mx-auto">
+            I'm here to make sure you never stare at a blank screen wondering "what should I even post?"
+          </p>
+
+          <div className="bg-white rounded-xl p-6 max-w-sm mx-auto mb-8 shadow-sm">
+            <p className="text-text-secondary text-sm">
+              Ready to set things up? It takes about 5 minutes.
+              <br />
+              <span className="text-text-muted">(I promise not to ask your blood type.)</span>
             </p>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-text-primary mb-2">
-              What's your name?
-            </label>
-            <input
-              type="text"
-              className="input"
-              placeholder="Your first name"
-              value={userInfo.name}
-              onChange={(e) => setUserInfo({ ...userInfo, name: e.target.value })}
+          <Button onClick={handleNext} disabled={isLoading}>
+            {isLoading ? 'Loading...' : "Let's do this →"}
+          </Button>
+
+          <button
+            onClick={handleSkip}
+            className="block mx-auto mt-4 text-sm text-text-muted hover:text-text-secondary transition-colors"
+            disabled={isLoading}
+          >
+            Skip for now - just show me around
+          </button>
+        </div>
+      ),
+    },
+
+    // Step 2: Basic Info
+    {
+      id: 'basic-info',
+      title: 'The Basics',
+      content: (
+        <div className="bg-white rounded-2xl p-8 shadow-sm max-w-xl mx-auto">
+          <h2 className="font-headline text-2xl font-semibold text-text-primary mb-2">
+            The Basics
+          </h2>
+          <p className="text-text-secondary mb-8">Let's start with the essentials.</p>
+
+          <div className="space-y-6">
+            <Input
+              label="What should I call you?"
+              value={formData.displayName}
+              onChange={(e) => setFormData({ ...formData, displayName: e.target.value })}
+              placeholder="Sarah"
+            />
+            <p className="text-xs text-text-muted -mt-4">
+              This is how Heartie will greet you. First name is perfect.
+            </p>
+
+            <Input
+              label="What's your business called?"
+              value={formData.businessName}
+              onChange={(e) => setFormData({ ...formData, businessName: e.target.value })}
+              placeholder="Bloom Coaching"
+            />
+            <p className="text-xs text-text-muted -mt-4">
+              Don't have one yet? No problem - your name works great.
+            </p>
+
+            <div>
+              <label className="block text-sm font-medium text-text-primary mb-2">
+                What do you do in one sentence?
+              </label>
+              <textarea
+                className="textarea"
+                value={formData.businessDescription}
+                onChange={(e) => setFormData({ ...formData, businessDescription: e.target.value })}
+                placeholder="I help busy moms build sustainable self-care habits"
+                rows={2}
+              />
+              <p className="text-xs text-text-muted mt-1">
+                Don't overthink it. We'll refine this together.
+              </p>
+            </div>
+
+            <Input
+              label="Your website (optional)"
+              value={formData.website}
+              onChange={(e) => setFormData({ ...formData, website: e.target.value })}
+              placeholder="https://yourbusiness.com"
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-text-primary mb-2">
-              What's your business called?
-            </label>
-            <input
-              type="text"
-              className="input"
-              placeholder="Your business name"
-              value={userInfo.businessName}
-              onChange={(e) => setUserInfo({ ...userInfo, businessName: e.target.value })}
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-text-primary mb-2">
-              What industry are you in?
-            </label>
-            <select
-              className="input"
-              value={userInfo.industry}
-              onChange={(e) => setUserInfo({ ...userInfo, industry: e.target.value })}
-            >
-              <option value="">Select your industry</option>
-              <option value="coaching">Coaching & Consulting</option>
-              <option value="creative">Creative Services</option>
-              <option value="wellness">Health & Wellness</option>
-              <option value="education">Education & Training</option>
-              <option value="services">Professional Services</option>
-              <option value="ecommerce">E-commerce & Products</option>
-              <option value="other">Other</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-text-primary mb-2">
-              What's your main marketing goal right now?
-            </label>
-            <select
-              className="input"
-              value={userInfo.mainGoal}
-              onChange={(e) => setUserInfo({ ...userInfo, mainGoal: e.target.value })}
-            >
-              <option value="">Select your main goal</option>
-              <option value="visibility">Get more visible and grow my audience</option>
-              <option value="leads">Generate more leads and inquiries</option>
-              <option value="sales">Increase sales and conversions</option>
-              <option value="consistency">Be more consistent with content</option>
-              <option value="strategy">Develop a clear marketing strategy</option>
-            </select>
-          </div>
-
-          <div className="flex gap-3 pt-4">
-            <Button variant="secondary" onClick={() => setCurrentStep(0)}>
+          <div className="flex justify-between mt-8">
+            <Button onClick={handleBack} variant="ghost">
               ← Back
             </Button>
             <Button
-              className="flex-1"
-              onClick={() => setCurrentStep(2)}
-              disabled={!userInfo.name || !userInfo.businessName || !userInfo.industry || !userInfo.mainGoal}
+              onClick={handleNext}
+              disabled={!formData.displayName || isLoading}
             >
-              Continue →
+              {isLoading ? 'Saving...' : 'Continue →'}
             </Button>
           </div>
         </div>
       ),
     },
+
+    // Step 3: Business Type & Stage
+    {
+      id: 'business-type',
+      title: 'About Your Business',
+      content: (
+        <div className="bg-white rounded-2xl p-8 shadow-sm max-w-xl mx-auto">
+          <h2 className="font-headline text-2xl font-semibold text-text-primary mb-2">
+            About Your Business
+          </h2>
+          <p className="text-text-secondary mb-8">This helps us tailor your experience.</p>
+
+          <div className="space-y-8">
+            <div>
+              <label className="block text-sm font-medium text-text-primary mb-4">
+                What type of business do you run?
+              </label>
+              <RadioGroup
+                name="businessType"
+                value={formData.businessType}
+                onChange={(value) => setFormData({ ...formData, businessType: value as BusinessType })}
+                options={[
+                  { value: 'service', label: 'Service-based', description: 'Coaching, consulting, freelancing' },
+                  { value: 'digital', label: 'Digital products', description: 'Courses, templates, memberships' },
+                  { value: 'product', label: 'Product-based', description: 'Physical products' },
+                  { value: 'mixed', label: 'Mix of the above' },
+                ]}
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-text-primary mb-4">
+                What stage are you at?
+              </label>
+              <RadioGroup
+                name="businessStage"
+                value={formData.businessStage}
+                onChange={(value) => setFormData({ ...formData, businessStage: value as BusinessStage })}
+                options={[
+                  { value: 'starting', label: 'Just starting', description: 'Pre-revenue or <$10K/year' },
+                  { value: 'growing', label: 'Growing', description: '$10K-$100K/year' },
+                  { value: 'established', label: 'Established', description: '$100K+/year' },
+                ]}
+              />
+            </div>
+          </div>
+
+          <div className="flex justify-between mt-8">
+            <Button onClick={handleBack} variant="ghost">
+              ← Back
+            </Button>
+            <Button
+              onClick={handleNext}
+              disabled={!formData.businessType || !formData.businessStage || isLoading}
+            >
+              {isLoading ? 'Saving...' : 'Continue →'}
+            </Button>
+          </div>
+        </div>
+      ),
+    },
+
+    // Step 4: Profile Photo (Optional)
+    {
+      id: 'photo',
+      title: 'One more thing',
+      content: (
+        <div className="bg-white rounded-2xl p-8 shadow-sm max-w-md mx-auto text-center">
+          <h2 className="font-headline text-2xl font-semibold text-text-primary mb-2">
+            One more thing
+          </h2>
+          <p className="text-text-secondary mb-8">
+            Totally optional, but it makes things feel more personal.
+          </p>
+
+          <div className="mb-8 flex justify-center">
+            <PhotoUpload
+              currentUrl={user?.profilePhotoUrl || undefined}
+              onUpload={handlePhotoUpload}
+              size="lg"
+            />
+          </div>
+
+          <div className="flex justify-center gap-4">
+            <Button onClick={handleNext} variant="ghost" disabled={isLoading}>
+              Skip this - I'm camera shy
+            </Button>
+            <Button onClick={handleNext} disabled={isLoading}>
+              {isLoading ? 'Saving...' : 'Continue →'}
+            </Button>
+          </div>
+        </div>
+      ),
+    },
+
+    // Step 5: The Framework Explanation
     {
       id: 'framework',
-      title: 'The 3-Layer Framework',
-      description: 'Your foundation for strategic marketing',
-      icon: '🏗️',
+      title: 'How Heartwired Works',
       content: (
-        <div className="space-y-6 max-w-3xl mx-auto">
-          <div className="text-center mb-8">
-            <div className="text-6xl mb-4">🏗️</div>
-            <h2 className="text-2xl font-headline font-bold text-text-primary mb-2">
-              How Heartie Works: The 3-Layer Framework
-            </h2>
-            <p className="text-text-secondary">
-              Great marketing isn't random. It's built on a solid foundation.
-            </p>
-          </div>
+        <div className="bg-white rounded-2xl p-8 shadow-sm max-w-2xl mx-auto">
+          <h2 className="font-headline text-2xl font-semibold text-text-primary mb-4">
+            Here's how Heartwired works differently
+          </h2>
 
-          <div className="space-y-4">
-            <Card className="border-l-4" style={{ borderColor: '#7A2D4D' }}>
-              <div className="flex items-start gap-4">
-                <div className="w-12 h-12 rounded-full bg-burgundy flex items-center justify-center text-white text-xl flex-shrink-0">
-                  1
-                </div>
-                <div className="flex-1">
-                  <h3 className="font-headline font-semibold text-text-primary mb-2">
-                    Layer 1: Brand Strategy
-                  </h3>
-                  <p className="text-sm text-text-secondary mb-3">
-                    Define <strong>who you serve</strong>, <strong>what makes you unique</strong>,
-                    and <strong>how you talk about it</strong>.
-                  </p>
-                  <p className="text-xs text-text-muted">
-                    This is your foundation. Everything else builds on this.
-                  </p>
-                </div>
+          <p className="text-text-secondary mb-6">
+            Most marketing tools start with tactics: "Schedule this post. Write that email."
+          </p>
+
+          <p className="text-text-secondary mb-8">
+            But tactics without strategy is just noise. Heartwired uses a 3-layer approach:
+          </p>
+
+          {/* Framework Diagram */}
+          <div className="space-y-4 mb-8">
+            {/* Layer 3 */}
+            <Card className="border-l-4 border-success">
+              <div className="flex items-center gap-3 mb-2">
+                <span className="text-xl">📋</span>
+                <h3 className="font-headline font-semibold text-text-primary">
+                  3. Marketing Plan
+                </h3>
               </div>
+              <p className="text-sm text-text-secondary ml-9">
+                What you do & when you do it
+                <br />
+                <span className="text-text-muted">Calendar • Activities • Campaigns</span>
+              </p>
             </Card>
 
-            <Card className="border-l-4" style={{ borderColor: '#1B6B6B' }}>
-              <div className="flex items-start gap-4">
-                <div className="w-12 h-12 rounded-full bg-teal-dark flex items-center justify-center text-white text-xl flex-shrink-0">
-                  2
-                </div>
-                <div className="flex-1">
-                  <h3 className="font-headline font-semibold text-text-primary mb-2">
-                    Layer 2: Marketing Strategy
-                  </h3>
-                  <p className="text-sm text-text-secondary mb-3">
-                    Develop <strong>your voice</strong>, understand <strong>your reality</strong>,
-                    and map <strong>your landscape</strong>.
-                  </p>
-                  <p className="text-xs text-text-muted">
-                    This is your approach. How you'll reach your people.
-                  </p>
-                </div>
+            <div className="text-center text-text-muted">↑ informs</div>
+
+            {/* Layer 2 */}
+            <Card className="border-l-4 border-teal-dark">
+              <div className="flex items-center gap-3 mb-2">
+                <span className="text-xl">🎯</span>
+                <h3 className="font-headline font-semibold text-text-primary">
+                  2. Marketing Strategy
+                </h3>
               </div>
+              <p className="text-sm text-text-secondary ml-9">
+                Where you show up & how you sound
+                <br />
+                <span className="text-text-muted">Voice • Reality • Landscape</span>
+              </p>
             </Card>
 
-            <Card className="border-l-4" style={{ borderColor: '#5A9A6B' }}>
-              <div className="flex items-start gap-4">
-                <div className="w-12 h-12 rounded-full bg-success flex items-center justify-center text-white text-xl flex-shrink-0">
-                  3
-                </div>
-                <div className="flex-1">
-                  <h3 className="font-headline font-semibold text-text-primary mb-2">
-                    Layer 3: Marketing Plan
-                  </h3>
-                  <p className="text-sm text-text-secondary mb-3">
-                    Set <strong>your big plans</strong> and execute with a quarterly calendar.
-                  </p>
-                  <p className="text-xs text-text-muted">
-                    This is your execution. Where strategy meets action.
-                  </p>
-                </div>
+            <div className="text-center text-text-muted">↑ informs</div>
+
+            {/* Layer 1 */}
+            <Card className="border-l-4 border-burgundy">
+              <div className="flex items-center gap-3 mb-2">
+                <span className="text-xl">🌱</span>
+                <h3 className="font-headline font-semibold text-text-primary">
+                  1. Brand Strategy (Start here)
+                </h3>
               </div>
+              <p className="text-sm text-text-secondary ml-9">
+                Who you serve & why you matter
+                <br />
+                <span className="text-text-muted">Customer • Position • Messaging</span>
+              </p>
             </Card>
           </div>
 
-          <div className="bg-dusty-pink-light rounded-lg p-6 mt-6">
-            <p className="text-sm text-text-primary">
-              💡 <strong>Here's the magic:</strong> When you have all 3 layers in place,
-              creating content becomes easy. You'll know exactly what to say, who to say it to,
-              and why it matters.
-            </p>
-          </div>
+          <p className="text-text-secondary text-center mb-8">
+            We'll help you build from the foundation up. It takes a bit longer, but everything works better.
+          </p>
 
-          <div className="flex gap-3 pt-4">
-            <Button variant="secondary" onClick={() => setCurrentStep(1)}>
+          <div className="flex justify-between">
+            <Button onClick={handleBack} variant="ghost">
               ← Back
             </Button>
-            <Button className="flex-1" onClick={() => setCurrentStep(3)}>
-              Got it! →
+            <Button onClick={handleNext} disabled={isLoading}>
+              {isLoading ? 'Saving...' : 'Got it, let's go →'}
             </Button>
           </div>
         </div>
       ),
     },
-    {
-      id: 'funnel',
-      title: 'The Marketing Funnel',
-      description: 'Understanding the customer journey',
-      icon: '🎯',
-      content: (
-        <div className="space-y-6 max-w-3xl mx-auto">
-          <div className="text-center mb-8">
-            <div className="text-6xl mb-4">🎯</div>
-            <h2 className="text-2xl font-headline font-bold text-text-primary mb-2">
-              The 4-Stage Marketing Funnel
-            </h2>
-            <p className="text-text-secondary">
-              Every piece of content moves people through a journey.
-            </p>
-          </div>
 
-          <div className="grid md:grid-cols-2 gap-4">
-            <Card className="border-l-4" style={{ borderColor: '#E8B4B8' }}>
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <span className="text-2xl">👁️</span>
-                  <h3 className="font-headline font-semibold text-text-primary">
-                    Getting Seen
-                  </h3>
-                </div>
-                <p className="text-sm text-text-secondary">
-                  Awareness content that helps people discover you. Educational posts,
-                  tips, and valuable insights.
-                </p>
-              </div>
-            </Card>
-
-            <Card className="border-l-4" style={{ borderColor: '#B4D4E8' }}>
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <span className="text-2xl">🤝</span>
-                  <h3 className="font-headline font-semibold text-text-primary">
-                    Building Trust
-                  </h3>
-                </div>
-                <p className="text-sm text-text-secondary">
-                  Consideration content that builds credibility. Case studies,
-                  frameworks, and your unique perspective.
-                </p>
-              </div>
-            </Card>
-
-            <Card className="border-l-4" style={{ borderColor: '#D4B8E8' }}>
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <span className="text-2xl">💰</span>
-                  <h3 className="font-headline font-semibold text-text-primary">
-                    Making the Ask
-                  </h3>
-                </div>
-                <p className="text-sm text-text-secondary">
-                  Conversion content that invites action. Launches, offers,
-                  and sales-focused messages.
-                </p>
-              </div>
-            </Card>
-
-            <Card className="border-l-4" style={{ borderColor: '#B8E8D4' }}>
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <span className="text-2xl">💕</span>
-                  <h3 className="font-headline font-semibold text-text-primary">
-                    Keeping Connected
-                  </h3>
-                </div>
-                <p className="text-sm text-text-secondary">
-                  Retention content that nurtures relationships. Client appreciation,
-                  behind-the-scenes, and community building.
-                </p>
-              </div>
-            </Card>
-          </div>
-
-          <div className="bg-dusty-pink-light rounded-lg p-6 mt-6">
-            <p className="text-sm text-text-primary">
-              💡 <strong>Balance is key:</strong> A healthy marketing funnel needs content
-              at every stage. Heartie helps you track this automatically!
-            </p>
-          </div>
-
-          <div className="flex gap-3 pt-4">
-            <Button variant="secondary" onClick={() => setCurrentStep(2)}>
-              ← Back
-            </Button>
-            <Button className="flex-1" onClick={() => setCurrentStep(4)}>
-              Continue →
-            </Button>
-          </div>
-        </div>
-      ),
-    },
-    {
-      id: 'features',
-      title: 'Your Heartie Toolkit',
-      description: 'Everything you need in one place',
-      icon: '🛠️',
-      content: (
-        <div className="space-y-6 max-w-3xl mx-auto">
-          <div className="text-center mb-8">
-            <div className="text-6xl mb-4">🛠️</div>
-            <h2 className="text-2xl font-headline font-bold text-text-primary mb-2">
-              Your Heartie Toolkit
-            </h2>
-            <p className="text-text-secondary">
-              Everything you need to plan and execute your marketing.
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-2 gap-4">
-            <Card hover className="cursor-pointer" onClick={() => navigate('/dashboard')}>
-              <div className="flex items-start gap-3">
-                <span className="text-3xl">📊</span>
-                <div>
-                  <h3 className="font-headline font-semibold text-text-primary mb-1">
-                    Dashboard
-                  </h3>
-                  <p className="text-sm text-text-secondary">
-                    Your weekly overview, goals progress, and Heartie's daily guidance.
-                  </p>
-                </div>
-              </div>
-            </Card>
-
-            <Card hover className="cursor-pointer" onClick={() => navigate('/calendar')}>
-              <div className="flex items-start gap-3">
-                <span className="text-3xl">📅</span>
-                <div>
-                  <h3 className="font-headline font-semibold text-text-primary mb-1">
-                    Calendar
-                  </h3>
-                  <p className="text-sm text-text-secondary">
-                    Plan your content with drag-and-drop. See your whole week at a glance.
-                  </p>
-                </div>
-              </div>
-            </Card>
-
-            <Card hover className="cursor-pointer" onClick={() => navigate('/goals')}>
-              <div className="flex items-start gap-3">
-                <span className="text-3xl">🎯</span>
-                <div>
-                  <h3 className="font-headline font-semibold text-text-primary mb-1">
-                    Goals
-                  </h3>
-                  <p className="text-sm text-text-secondary">
-                    Track annual, quarterly, and weekly goals. Stay focused on what matters.
-                  </p>
-                </div>
-              </div>
-            </Card>
-
-            <Card hover className="cursor-pointer" onClick={() => navigate('/strategy')}>
-              <div className="flex items-start gap-3">
-                <span className="text-3xl">🏗️</span>
-                <div>
-                  <h3 className="font-headline font-semibold text-text-primary mb-1">
-                    Strategy
-                  </h3>
-                  <p className="text-sm text-text-secondary">
-                    Build your 3-layer foundation with guided questionnaires.
-                  </p>
-                </div>
-              </div>
-            </Card>
-
-            <Card hover className="cursor-pointer" onClick={() => navigate('/templates')}>
-              <div className="flex items-start gap-3">
-                <span className="text-3xl">📝</span>
-                <div>
-                  <h3 className="font-headline font-semibold text-text-primary mb-1">
-                    Templates
-                  </h3>
-                  <p className="text-sm text-text-secondary">
-                    Ready-to-use content templates for every funnel stage.
-                  </p>
-                </div>
-              </div>
-            </Card>
-
-            <Card hover className="cursor-pointer" onClick={() => navigate('/insights')}>
-              <div className="flex items-start gap-3">
-                <span className="text-3xl">💡</span>
-                <div>
-                  <h3 className="font-headline font-semibold text-text-primary mb-1">
-                    Insights
-                  </h3>
-                  <p className="text-sm text-text-secondary">
-                    Track what's working and get personalized recommendations.
-                  </p>
-                </div>
-              </div>
-            </Card>
-          </div>
-
-          <div className="flex gap-3 pt-4">
-            <Button variant="secondary" onClick={() => setCurrentStep(3)}>
-              ← Back
-            </Button>
-            <Button className="flex-1" onClick={() => setCurrentStep(5)}>
-              Almost done! →
-            </Button>
-          </div>
-        </div>
-      ),
-    },
+    // Step 6: Ready / Completion
     {
       id: 'complete',
       title: "You're all set!",
-      description: 'Time to start planning',
-      icon: '🎉',
       content: (
-        <div className="text-center space-y-6 py-8 max-w-2xl mx-auto">
-          <div className="text-8xl mb-4">🎉</div>
-          <h2 className="text-3xl font-headline font-bold text-text-primary mb-4">
-            {userInfo.name ? `You're all set, ${userInfo.name}!` : "You're all set!"}
+        <div className="text-center py-8 max-w-xl mx-auto">
+          {/* Celebration */}
+          <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-dusty-pink-light flex items-center justify-center">
+            <span className="text-5xl">🎉</span>
+          </div>
+
+          <h2 className="font-headline text-3xl font-semibold text-text-primary mb-4">
+            You're all set{formData.displayName ? `, ${formData.displayName}` : ''}!
           </h2>
-          <p className="text-lg text-text-secondary">
-            Welcome to {userInfo.businessName || 'your marketing journey'}!
-            Here's what to do next:
+
+          <p className="text-lg text-text-secondary mb-8">
+            Your Heartwired dashboard is ready.
           </p>
 
-          <div className="bg-cream-dark rounded-lg p-6 text-left space-y-4 mt-8">
+          {/* Heartie tip */}
+          <div className="bg-white rounded-xl p-6 max-w-md mx-auto mb-8 shadow-sm text-left">
             <div className="flex items-start gap-3">
-              <div className="w-8 h-8 rounded-full bg-burgundy flex items-center justify-center text-white font-bold flex-shrink-0">
-                1
+              <div className="w-10 h-10 rounded-full bg-dusty-pink-light flex items-center justify-center flex-shrink-0">
+                <span className="text-xl">💡</span>
               </div>
               <div>
-                <h3 className="font-semibold text-text-primary mb-1">
-                  Complete Your Strategy Foundation
-                </h3>
-                <p className="text-sm text-text-secondary">
-                  Head to <strong>Strategy</strong> and answer the questionnaires.
-                  This is your marketing North Star.
+                <p className="text-sm font-medium text-text-primary mb-1">
+                  Quick tip from Heartie:
                 </p>
-              </div>
-            </div>
-
-            <div className="flex items-start gap-3">
-              <div className="w-8 h-8 rounded-full bg-teal-dark flex items-center justify-center text-white font-bold flex-shrink-0">
-                2
-              </div>
-              <div>
-                <h3 className="font-semibold text-text-primary mb-1">
-                  Set Your First Goals
-                </h3>
                 <p className="text-sm text-text-secondary">
-                  Go to <strong>Goals</strong> and define what success looks like for you this quarter.
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-start gap-3">
-              <div className="w-8 h-8 rounded-full bg-success flex items-center justify-center text-white font-bold flex-shrink-0">
-                3
-              </div>
-              <div>
-                <h3 className="font-semibold text-text-primary mb-1">
-                  Plan Your Week
-                </h3>
-                <p className="text-sm text-text-secondary">
-                  Open the <strong>Calendar</strong> and add your first content activities.
-                  Use templates to get started fast!
+                  "Start with Your Customer in the Strategy section. It takes 10 minutes and makes everything else click into place!"
                 </p>
               </div>
             </div>
           </div>
 
-          <div className="bg-dusty-pink-light rounded-lg p-6 mt-6">
-            <div className="flex gap-4">
-              <div className="text-4xl">🌸</div>
-              <div className="text-left flex-1">
-                <p className="text-sm text-text-primary">
-                  <strong>Remember:</strong> Marketing doesn't have to be overwhelming.
-                  Take it one step at a time. I'm here to guide you every step of the way.
-                </p>
-                <p className="text-sm text-text-muted mt-2">— Heartie</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="pt-6">
-            <Button
-              onClick={() => {
-                onComplete();
-                navigate('/dashboard');
-              }}
-            >
-              Let's Go! →
-            </Button>
-          </div>
+          <Button onClick={handleNext} disabled={isLoading}>
+            {isLoading ? 'Finishing up...' : 'Go to Dashboard →'}
+          </Button>
         </div>
       ),
     },
@@ -577,19 +438,15 @@ export function Onboarding({ onComplete }: OnboardingProps) {
           </div>
 
           {/* Step Content */}
-          <Card className="min-h-[500px]">
-            {currentStepData.content}
-          </Card>
+          {currentStepData.content}
 
-          {/* Skip Option */}
-          {currentStep < steps.length - 1 && (
+          {/* Skip Option (only show on first few steps) */}
+          {currentStep > 0 && currentStep < steps.length - 1 && (
             <div className="text-center mt-6">
               <button
-                onClick={() => {
-                  onComplete();
-                  navigate('/dashboard');
-                }}
+                onClick={handleSkip}
                 className="text-sm text-text-muted hover:text-text-secondary transition-colors"
+                disabled={isLoading}
               >
                 Skip onboarding
               </button>
