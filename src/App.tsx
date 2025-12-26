@@ -76,9 +76,8 @@ function App() {
 
   // Allow resetting onboarding in dev mode
   useEffect(() => {
-    // @ts-ignore - dev helper
-    window.resetOnboarding = async () => {
-      const { useAuth } = await import('./contexts/AuthContext');
+    // @ts-expect-error - dev helper
+    window.resetOnboarding = () => {
       console.log('To reset onboarding, call updateProfile({ onboardingComplete: false, onboardingStep: 0 })');
     };
   }, []);
