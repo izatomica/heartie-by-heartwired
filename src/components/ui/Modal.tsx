@@ -44,14 +44,14 @@ export function Modal({
     >
       {/* Overlay */}
       <div
-        className="absolute inset-0 bg-text-primary/50 backdrop-blur-sm"
+        className="absolute inset-0 bg-text-primary/50 backdrop-blur-sm z-0"
         style={{ animation: 'fadeIn 200ms ease-out' }}
       />
 
       {/* Modal Content */}
       <div
         className={clsx(
-          'relative w-full bg-white rounded-xl shadow-xl p-6',
+          'relative z-10 w-full bg-white rounded-xl shadow-xl p-6',
           sizeClasses[size]
         )}
         style={{ animation: 'scaleIn 200ms ease-out' }}
