@@ -38,14 +38,12 @@ export function Modal({
   };
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      onClick={onClose}
-    >
-      {/* Overlay */}
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      {/* Overlay - click to close */}
       <div
-        className="absolute inset-0 bg-text-primary/50 backdrop-blur-sm z-0"
+        className="absolute inset-0 bg-text-primary/50 backdrop-blur-sm"
         style={{ animation: 'fadeIn 200ms ease-out' }}
+        onClick={onClose}
       />
 
       {/* Modal Content */}
@@ -55,7 +53,6 @@ export function Modal({
           sizeClasses[size]
         )}
         style={{ animation: 'scaleIn 200ms ease-out' }}
-        onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         {title && (
