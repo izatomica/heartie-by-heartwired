@@ -9,3 +9,12 @@ export type { CardProps } from './Card';
 
 export { Modal } from './Modal';
 export type { ModalProps } from './Modal';
+
+export { Textarea } from './Textarea';
+export type { TextareaProps } from './Textarea';
+
+export { RadioGroup } from './RadioGroup';
+export type { RadioGroupProps, RadioOption } from './RadioGroup';
+
+export { PhotoUpload } from './PhotoUpload';
+export type { PhotoUploadProps } from './PhotoUpload';
