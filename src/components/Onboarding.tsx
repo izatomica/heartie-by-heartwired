@@ -355,7 +355,7 @@ export function Onboarding() {
               ← Back
             </Button>
             <Button onClick={handleNext} disabled={isLoading}>
-              {isLoading ? 'Saving...' : 'Got it, let's go →'}
+              {isLoading ? 'Saving...' : "Got it, let's go →"}
             </Button>
           </div>
         </div>
