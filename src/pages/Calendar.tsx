@@ -1,38 +1,155 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import {
   format,
   startOfWeek,
-  endOfWeek,
-  startOfMonth,
-  endOfMonth,
-  startOfQuarter,
-  endOfQuarter,
   addDays,
   addWeeks,
   subWeeks,
-  addMonths,
-  subMonths,
-  addQuarters,
-  subQuarters,
   isSameDay,
-  isSameMonth,
-  isWithinInterval,
-  eachDayOfInterval,
-  eachWeekOfInterval,
 } from 'date-fns';
 import { DndContext, DragOverlay, useSensor, useSensors, PointerSensor, useDroppable, useDraggable } from '@dnd-kit/core';
 import type { DragEndEvent, DragStartEvent } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
-import type { Activity, FunnelStage } from '../types';
-import { FUNNEL_STAGES } from '../types';
+import type { Activity, FunnelStage, Platform, ActivityStatus } from '../types';
+import { FUNNEL_STAGES, PLATFORM_INFO } from '../types';
 import { mockActivities } from '../lib/mockData';
-import { ActivityCard } from '../components/calendar/ActivityCard';
 import { ActivityDetailPanel } from '../components/calendar/ActivityDetailPanel';
 import { AddActivityModal } from '../components/calendar/AddActivityModal';
-import { Card } from '../components/ui';
 
-// Draggable Activity wrapper component
-function DraggableActivity({ activity, children }: { activity: Activity; children: React.ReactNode }) {
+// Icons as SVG components
+const CalendarIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+    <line x1="16" y1="2" x2="16" y2="6"></line>
+    <line x1="8" y1="2" x2="8" y2="6"></line>
+    <line x1="3" y1="10" x2="21" y2="10"></line>
+  </svg>
+);
+
+const ListIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="8" y1="6" x2="21" y2="6"></line>
+    <line x1="8" y1="12" x2="21" y2="12"></line>
+    <line x1="8" y1="18" x2="21" y2="18"></line>
+    <line x1="3" y1="6" x2="3.01" y2="6"></line>
+    <line x1="3" y1="12" x2="3.01" y2="12"></line>
+    <line x1="3" y1="18" x2="3.01" y2="18"></line>
+  </svg>
+);
+
+const FunnelIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"></path>
+  </svg>
+);
+
+const ChevronLeft = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="15 18 9 12 15 6"></polyline>
+  </svg>
+);
+
+const ChevronRight = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="9 18 15 12 9 6"></polyline>
+  </svg>
+);
+
+const ChevronDown = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="6 9 12 15 18 9"></polyline>
+  </svg>
+);
+
+const PlusIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="12" y1="5" x2="12" y2="19"></line>
+    <line x1="5" y1="12" x2="19" y2="12"></line>
+  </svg>
+);
+
+const ChartIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="18" y1="20" x2="18" y2="10"></line>
+    <line x1="12" y1="20" x2="12" y2="4"></line>
+    <line x1="6" y1="20" x2="6" y2="14"></line>
+  </svg>
+);
+
+const SparklesIcon = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12 3l1.912 5.813a2 2 0 001.275 1.275L21 12l-5.813 1.912a2 2 0 00-1.275 1.275L12 21l-1.912-5.813a2 2 0 00-1.275-1.275L3 12l5.813-1.912a2 2 0 001.275-1.275L12 3z"></path>
+  </svg>
+);
+
+const GripIcon = () => (
+  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="9" cy="5" r="1"></circle>
+    <circle cx="9" cy="12" r="1"></circle>
+    <circle cx="9" cy="19" r="1"></circle>
+    <circle cx="15" cy="5" r="1"></circle>
+    <circle cx="15" cy="12" r="1"></circle>
+    <circle cx="15" cy="19" r="1"></circle>
+  </svg>
+);
+
+// Platform icons
+const getPlatformIcon = (platform: Platform) => {
+  const icons: Record<Platform, React.ReactNode> = {
+    linkedin: (
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path>
+        <rect x="2" y="9" width="4" height="12"></rect>
+        <circle cx="4" cy="4" r="2"></circle>
+      </svg>
+    ),
+    email: (
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+        <polyline points="22,6 12,13 2,6"></polyline>
+      </svg>
+    ),
+    instagram: (
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+        <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+        <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+      </svg>
+    ),
+    facebook: (
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path>
+      </svg>
+    ),
+    tiktok: (
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z"></path>
+      </svg>
+    ),
+    blog: (
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+        <polyline points="14 2 14 8 20 8"></polyline>
+        <line x1="16" y1="13" x2="8" y2="13"></line>
+        <line x1="16" y1="17" x2="8" y2="17"></line>
+        <polyline points="10 9 9 9 8 9"></polyline>
+      </svg>
+    ),
+    other: (
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path>
+        <polyline points="13 2 13 9 20 9"></polyline>
+      </svg>
+    ),
+  };
+  return icons[platform];
+};
+
+type LayoutView = 'calendar' | 'list' | 'funnel';
+type PeriodView = 'day' | 'week' | 'month';
+
+// Draggable Activity Card wrapper
+function DraggableActivityCard({ activity, children }: { activity: Activity; children: React.ReactNode }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: activity.id,
   });
@@ -40,7 +157,6 @@ function DraggableActivity({ activity, children }: { activity: Activity; childre
   const style = {
     transform: CSS.Transform.toString(transform),
     opacity: isDragging ? 0.5 : 1,
-    cursor: 'grab',
   };
 
   return (
@@ -50,49 +166,135 @@ function DraggableActivity({ activity, children }: { activity: Activity; childre
   );
 }
 
-// Droppable Day wrapper component
-function DroppableDay({ day, children, isToday }: { day: Date; children: React.ReactNode; isToday: boolean }) {
+// Droppable Day Cell wrapper
+function DroppableDayCell({ dayKey, rowIndex, children }: { dayKey: string; rowIndex: number; children: React.ReactNode }) {
   const { setNodeRef, isOver } = useDroppable({
-    id: day.toISOString(),
+    id: `${dayKey}-row-${rowIndex}`,
+    data: { dayKey, rowIndex },
   });
 
   return (
     <div
       ref={setNodeRef}
-      className={`min-h-[180px] sm:min-h-[200px] rounded-lg border-2 p-2 sm:p-3 transition-colors ${
-        isOver
-          ? 'bg-dusty-pink-light border-dusty-pink'
-          : isToday
-          ? 'bg-dusty-pink-light border-dusty-pink'
-          : 'bg-white border-border'
+      className={`h-[92px] border-b transition-colors ${
+        isOver ? 'bg-[#FFE4D8]' : ''
       }`}
+      style={{ borderColor: 'rgba(43, 43, 35, 0.5)' }}
     >
       {children}
     </div>
   );
 }
 
-type CalendarView = 'week' | 'month' | 'quarter';
+// Activity Card Component matching the design
+function ActivityCardNew({ activity, onClick }: { activity: Activity; onClick?: () => void }) {
+  const stageInfo = FUNNEL_STAGES[activity.funnelStage];
+  const platformInfo = PLATFORM_INFO[activity.platform];
+
+  const statusLabel = activity.status.charAt(0).toUpperCase() + activity.status.slice(1);
+
+  return (
+    <div
+      className="h-full rounded-2xl p-2 cursor-grab flex flex-col justify-between"
+      style={{
+        backgroundColor: '#F1E8D7',
+        border: `1px solid ${stageInfo.color}`,
+      }}
+      onClick={onClick}
+      draggable
+    >
+      <div className="flex items-start gap-1">
+        <div
+          className="w-2 h-2 rounded-full flex-shrink-0 mt-1"
+          style={{ backgroundColor: stageInfo.color, border: '0.5px solid #2B2B23' }}
+        />
+        <div className="flex-1 min-w-0">
+          <h4
+            className="text-[13px] font-semibold leading-tight line-clamp-2"
+            style={{ fontFamily: "'Bricolage Grotesque', sans-serif", color: '#2B2B23' }}
+          >
+            {activity.title}
+          </h4>
+        </div>
+      </div>
+      <div className="flex items-center gap-1 text-[11px] mt-1" style={{ color: '#2B2B23' }}>
+        {getPlatformIcon(activity.platform)}
+        <span>{statusLabel} · {platformInfo.name}</span>
+      </div>
+    </div>
+  );
+}
+
+// Suggestion Card Component
+function SuggestionCard({
+  stage,
+  title,
+  reason,
+  onDragStart
+}: {
+  stage: FunnelStage;
+  title: string;
+  reason: string;
+  onDragStart?: () => void;
+}) {
+  const stageInfo = FUNNEL_STAGES[stage];
+  const stageLabels: Record<FunnelStage, string> = {
+    awareness: 'Awareness',
+    consideration: 'Trust',
+    conversion: 'Decision',
+    retention: 'Loyalty',
+  };
+
+  return (
+    <div
+      className="rounded-2xl p-3 cursor-grab"
+      style={{ backgroundColor: '#F1E8D7', border: '2px solid #2B2B23' }}
+      draggable
+      onDragStart={onDragStart}
+    >
+      <div className="flex items-center gap-1 mb-1">
+        <div
+          className="w-2 h-2 rounded-full"
+          style={{ backgroundColor: stageInfo.color, border: '0.5px solid #2B2B23' }}
+        />
+        <span className="text-[11px]" style={{ color: '#2B2B23' }}>{stageLabels[stage]}</span>
+      </div>
+      <h4
+        className="text-[13px] font-semibold mb-1"
+        style={{ fontFamily: "'Bricolage Grotesque', sans-serif", color: '#2B2B23' }}
+      >
+        {title}
+      </h4>
+      <p className="text-[11px] mb-1" style={{ color: '#2B2B23' }}>
+        Based on: {reason}
+      </p>
+      <div className="flex items-center gap-1 text-[11px]" style={{ color: '#2B2B23' }}>
+        <GripIcon />
+        <span>Drag to your week</span>
+      </div>
+    </div>
+  );
+}
 
 export function Calendar() {
-  const [calendarView, setCalendarView] = useState<CalendarView>('week');
+  const [layoutView, setLayoutView] = useState<LayoutView>('calendar');
+  const [periodView, setPeriodView] = useState<PeriodView>('week');
   const [currentDate, setCurrentDate] = useState(() => new Date());
   const [activities, setActivities] = useState<Activity[]>(mockActivities);
-  const [selectedFunnelStages, setSelectedFunnelStages] = useState<Set<FunnelStage>>(
-    new Set(['awareness', 'consideration', 'conversion', 'retention'])
-  );
   const [activeId, setActiveId] = useState<string | null>(null);
   const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null);
   const [isDetailPanelOpen, setIsDetailPanelOpen] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [addModalInitialDate, setAddModalInitialDate] = useState<Date | undefined>(undefined);
 
-  // Derived date ranges based on view
+  // Filter states
+  const [selectedFunnelStage, setSelectedFunnelStage] = useState<FunnelStage | 'all'>('all');
+  const [selectedPlatform, setSelectedPlatform] = useState<Platform | 'all'>('all');
+  const [selectedStatus, setSelectedStatus] = useState<ActivityStatus | 'all'>('all');
+
   const currentWeekStart = useMemo(() =>
     startOfWeek(currentDate, { weekStartsOn: 1 }), [currentDate]
   );
-  const currentMonthStart = useMemo(() => startOfMonth(currentDate), [currentDate]);
-  const currentQuarterStart = useMemo(() => startOfQuarter(currentDate), [currentDate]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -107,22 +309,43 @@ export function Calendar() {
   }, [currentWeekStart]);
 
   const filteredActivities = useMemo(() => {
-    return activities.filter((activity) => selectedFunnelStages.has(activity.funnelStage));
-  }, [activities, selectedFunnelStages]);
+    return activities.filter((activity) => {
+      if (selectedFunnelStage !== 'all' && activity.funnelStage !== selectedFunnelStage) return false;
+      if (selectedPlatform !== 'all' && activity.platform !== selectedPlatform) return false;
+      if (selectedStatus !== 'all' && activity.status !== selectedStatus) return false;
+      return true;
+    });
+  }, [activities, selectedFunnelStage, selectedPlatform, selectedStatus]);
 
-  const getActivitiesForDay = (day: Date) => {
+  // Group activities by day and row (for grid placement)
+  const getActivitiesForDay = useCallback((day: Date) => {
     return filteredActivities.filter((activity) => isSameDay(new Date(activity.date), day));
-  };
+  }, [filteredActivities]);
 
-  const toggleFunnelStage = (stage: FunnelStage) => {
-    const newStages = new Set(selectedFunnelStages);
-    if (newStages.has(stage)) {
-      newStages.delete(stage);
-    } else {
-      newStages.add(stage);
-    }
-    setSelectedFunnelStages(newStages);
-  };
+  // Calculate max activities per day to determine number of rows
+  const maxActivitiesPerDay = useMemo(() => {
+    return Math.max(6, ...weekDays.map(day => getActivitiesForDay(day).length));
+  }, [weekDays, getActivitiesForDay]);
+
+  // Calculate funnel health percentages
+  const funnelHealth = useMemo(() => {
+    const weekActivities = filteredActivities.filter(activity =>
+      weekDays.some(day => isSameDay(new Date(activity.date), day))
+    );
+    const total = weekActivities.length || 1;
+    const counts = {
+      awareness: weekActivities.filter(a => a.funnelStage === 'awareness').length,
+      consideration: weekActivities.filter(a => a.funnelStage === 'consideration').length,
+      conversion: weekActivities.filter(a => a.funnelStage === 'conversion').length,
+      retention: weekActivities.filter(a => a.funnelStage === 'retention').length,
+    };
+    return {
+      awareness: Math.round((counts.awareness / total) * 100),
+      consideration: Math.round((counts.consideration / total) * 100),
+      conversion: Math.round((counts.conversion / total) * 100),
+      retention: Math.round((counts.retention / total) * 100),
+    };
+  }, [filteredActivities, weekDays]);
 
   const handleDragStart = (event: DragStartEvent) => {
     setActiveId(event.active.id.toString());
@@ -135,16 +358,23 @@ export function Calendar() {
     if (!over) return;
 
     const activityId = active.id.toString();
-    const newDateStr = over.id.toString();
+    const overIdStr = over.id.toString();
 
-    if (activityId && newDateStr) {
-      setActivities((prev) =>
-        prev.map((activity) =>
-          activity.id === activityId
-            ? { ...activity, date: new Date(newDateStr) }
-            : activity
-        )
-      );
+    // Parse the droppable ID to get the day
+    const dayKeyMatch = overIdStr.match(/^(.+)-row-\d+$/);
+    if (dayKeyMatch) {
+      const dayKey = dayKeyMatch[1];
+      const newDate = new Date(dayKey);
+
+      if (!isNaN(newDate.getTime())) {
+        setActivities((prev) =>
+          prev.map((activity) =>
+            activity.id === activityId
+              ? { ...activity, date: newDate }
+              : activity
+          )
+        );
+      }
     }
   };
 
@@ -153,7 +383,7 @@ export function Calendar() {
     setIsDetailPanelOpen(true);
   };
 
-  const handleAddActivity = (date: Date) => {
+  const handleAddActivity = (date?: Date) => {
     setAddModalInitialDate(date);
     setIsAddModalOpen(true);
   };
@@ -181,480 +411,396 @@ export function Calendar() {
     setActivities((prev) => [...prev, newActivity]);
   };
 
-  const activeActivity = activeId ? activities.find((a) => a.id === activeId) : null;
-
-  // Navigation handlers
   const navigatePrev = () => {
-    if (calendarView === 'week') {
-      setCurrentDate((prev) => subWeeks(prev, 1));
-    } else if (calendarView === 'month') {
-      setCurrentDate((prev) => subMonths(prev, 1));
-    } else {
-      setCurrentDate((prev) => subQuarters(prev, 1));
-    }
+    setCurrentDate((prev) => subWeeks(prev, 1));
   };
 
   const navigateNext = () => {
-    if (calendarView === 'week') {
-      setCurrentDate((prev) => addWeeks(prev, 1));
-    } else if (calendarView === 'month') {
-      setCurrentDate((prev) => addMonths(prev, 1));
-    } else {
-      setCurrentDate((prev) => addQuarters(prev, 1));
-    }
+    setCurrentDate((prev) => addWeeks(prev, 1));
   };
 
-  const navigateToToday = () => {
-    setCurrentDate(new Date());
-  };
-
-  // Get date range label for navigation header
   const getDateRangeLabel = () => {
-    if (calendarView === 'week') {
-      return `${format(currentWeekStart, 'MMM d')} - ${format(addDays(currentWeekStart, 6), 'MMM d, yyyy')}`;
-    } else if (calendarView === 'month') {
-      return format(currentMonthStart, 'MMMM yyyy');
-    } else {
-      const quarterNum = Math.floor(currentMonthStart.getMonth() / 3) + 1;
-      return `Q${quarterNum} ${format(currentQuarterStart, 'yyyy')}`;
-    }
+    const endDate = addDays(currentWeekStart, 6);
+    return `${format(currentWeekStart, 'MMM d')} – ${format(endDate, 'd, yyyy')}`;
   };
 
-  // Get activities for date range based on view
-  const getActivitiesForDateRange = () => {
-    if (calendarView === 'week') {
-      const weekEnd = endOfWeek(currentWeekStart, { weekStartsOn: 1 });
-      return filteredActivities.filter((activity) =>
-        isWithinInterval(new Date(activity.date), { start: currentWeekStart, end: weekEnd })
-      );
-    } else if (calendarView === 'month') {
-      const monthEnd = endOfMonth(currentMonthStart);
-      return filteredActivities.filter((activity) =>
-        isWithinInterval(new Date(activity.date), { start: currentMonthStart, end: monthEnd })
-      );
-    } else {
-      const quarterEnd = endOfQuarter(currentQuarterStart);
-      return filteredActivities.filter((activity) =>
-        isWithinInterval(new Date(activity.date), { start: currentQuarterStart, end: quarterEnd })
-      );
-    }
-  };
+  const activeActivity = activeId ? activities.find((a) => a.id === activeId) : null;
 
-  // Generate month calendar grid (6 weeks x 7 days)
-  const monthCalendarDays = useMemo(() => {
-    const monthStart = currentMonthStart;
-    const monthEnd = endOfMonth(monthStart);
-    const calendarStart = startOfWeek(monthStart, { weekStartsOn: 1 });
-    const calendarEnd = endOfWeek(monthEnd, { weekStartsOn: 1 });
-    return eachDayOfInterval({ start: calendarStart, end: calendarEnd });
-  }, [currentMonthStart]);
-
-  // Generate quarter weeks for quarter view
-  const quarterWeeks = useMemo(() => {
-    const quarterEnd = endOfQuarter(currentQuarterStart);
-    return eachWeekOfInterval(
-      { start: currentQuarterStart, end: quarterEnd },
-      { weekStartsOn: 1 }
-    );
-  }, [currentQuarterStart]);
-
-  // Get activities count for a week (used in quarter view)
-  const getActivitiesForWeek = (weekStart: Date) => {
-    const weekEnd = endOfWeek(weekStart, { weekStartsOn: 1 });
-    return filteredActivities.filter((activity) =>
-      isWithinInterval(new Date(activity.date), { start: weekStart, end: weekEnd })
-    );
-  };
-
-  const activitiesInRange = getActivitiesForDateRange();
+  // Suggested actions (mock data)
+  const suggestedActions = [
+    { stage: 'consideration' as FunnelStage, title: 'Customer success story', reason: 'Consideration gap in your funnel.' },
+    { stage: 'conversion' as FunnelStage, title: 'FAQ email sequence', reason: 'Upcoming January offer.' },
+    { stage: 'awareness' as FunnelStage, title: 'Tips thread remix', reason: 'High saves on last story-led post.' },
+  ];
 
   return (
-    <div className="space-y-4 sm:space-y-6">
+    <div className="flex flex-col h-full gap-4">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl sm:text-3xl font-headline font-bold text-text-primary mb-2">
-          Calendar
-        </h1>
-        <p className="text-sm sm:text-base text-text-secondary">
-          Plan your marketing activities {calendarView === 'week' ? 'week by week' : calendarView === 'month' ? 'for the month' : 'for the quarter'}.
-        </p>
-      </div>
-
-      {/* Navigation & Filters */}
-      <Card padding="md">
-        <div className="space-y-4">
-          {/* View Toggle Tabs */}
-          <div className="flex justify-center">
-            <div className="inline-flex rounded-lg bg-cream-dark p-1">
-              {(['week', 'month', 'quarter'] as CalendarView[]).map((view) => (
-                <button
-                  key={view}
-                  onClick={() => setCalendarView(view)}
-                  className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
-                    calendarView === view
-                      ? 'bg-teal-dark text-white shadow-sm'
-                      : 'text-text-secondary hover:text-text-primary'
-                  }`}
-                >
-                  {view.charAt(0).toUpperCase() + view.slice(1)}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Date Navigation */}
-          <div className="flex items-center justify-between gap-2">
-            <button
-              onClick={navigatePrev}
-              className="btn-ghost flex items-center gap-1 text-sm sm:text-base"
-            >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
-              <span className="hidden sm:inline">Prev</span>
-            </button>
-            <h2 className="font-headline font-semibold text-sm sm:text-lg text-text-primary text-center">
-              {getDateRangeLabel()}
-            </h2>
-            <button
-              onClick={navigateNext}
-              className="btn-ghost flex items-center gap-1 text-sm sm:text-base"
-            >
-              <span className="hidden sm:inline">Next</span>
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </button>
-          </div>
-
-          {/* Today Button */}
-          <div className="flex justify-center">
-            <button
-              onClick={navigateToToday}
-              className="btn-secondary"
-            >
-              Today
-            </button>
-          </div>
-
-          {/* Funnel Stage Filters */}
-          <div>
-            <p className="text-sm font-medium text-text-primary mb-2">Filter by Funnel Stage:</p>
-            <div className="flex flex-wrap gap-2">
-              {Object.entries(FUNNEL_STAGES).map(([stage, info]) => {
-                const isActive = selectedFunnelStages.has(stage as FunnelStage);
-                return (
-                  <button
-                    key={stage}
-                    onClick={() => toggleFunnelStage(stage as FunnelStage)}
-                    className="px-3 py-1.5 rounded-full text-sm font-medium transition-all"
-                    style={{
-                      backgroundColor: isActive ? info.color : 'white',
-                      color: isActive ? '#FFFFFF' : 'var(--color-text-secondary)',
-                      border: `2px solid ${info.color}`,
-                    }}
-                  >
-                    {info.emoji} {info.name}
-                  </button>
-                );
-              })}
-            </div>
+      <header className="flex justify-between items-center">
+        <div
+          className="rounded-2xl px-4 py-2"
+          style={{ backgroundColor: '#F1E8D7', border: '2px solid #2B2B23' }}
+        >
+          <h1
+            className="text-[22px] font-semibold"
+            style={{ fontFamily: "'Bricolage Grotesque', sans-serif", color: '#2B2B23' }}
+          >
+            Calendar & rhythm
+          </h1>
+          <p className="text-[13px]" style={{ color: '#2B2B23' }}>
+            Plan your week across calendar, list, and funnel views.
+          </p>
+        </div>
+        <div
+          className="flex items-center gap-2 px-3 py-1.5 rounded-full"
+          style={{ backgroundColor: '#EECE7B', border: '2px solid #2B2B23' }}
+        >
+          <span className="text-[13px]" style={{ color: '#2B2B23' }}>
+            {format(new Date(), 'MMM d, yyyy')}
+          </span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2B2B23" strokeWidth="2">
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+            <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+          </svg>
+          <div
+            className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold"
+            style={{ backgroundColor: '#D27089', color: '#FCF7F1', border: '1px solid #2B2B23' }}
+          >
+            O
           </div>
         </div>
-      </Card>
+      </header>
 
-      {/* Calendar Grid - Conditional based on view */}
-      <DndContext
-        sensors={sensors}
-        onDragStart={handleDragStart}
-        onDragEnd={handleDragEnd}
-      >
-        {/* Week View */}
-        {calendarView === 'week' && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-7 gap-2 sm:gap-3">
-            {weekDays.map((day) => {
-              const isToday = isSameDay(day, new Date());
-              const dayActivities = getActivitiesForDay(day);
+      {/* Controls Bar */}
+      <div className="flex justify-between items-center gap-4">
+        <div className="flex gap-3 items-center">
+          {/* Layout Toggle */}
+          <div
+            className="flex rounded-full p-1 gap-1"
+            style={{ backgroundColor: '#F1E8D7', border: '2px solid #2B2B23' }}
+          >
+            {[
+              { key: 'calendar' as LayoutView, icon: <CalendarIcon />, label: 'Calendar' },
+              { key: 'list' as LayoutView, icon: <ListIcon />, label: 'List' },
+              { key: 'funnel' as LayoutView, icon: <FunnelIcon />, label: 'Funnel' },
+            ].map(({ key, icon, label }) => (
+              <button
+                key={key}
+                onClick={() => setLayoutView(key)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[13px] font-medium transition-colors"
+                style={{
+                  backgroundColor: layoutView === key ? '#115059' : 'transparent',
+                  color: layoutView === key ? '#FCF7F1' : '#2B2B23',
+                  border: layoutView === key ? '1px solid #2B2B23' : '1px solid transparent',
+                }}
+              >
+                {icon}
+                {label}
+              </button>
+            ))}
+          </div>
 
-              return (
-                <DroppableDay key={day.toISOString()} day={day} isToday={isToday}>
-                  {/* Day Header */}
-                  <div className="mb-2 sm:mb-3 flex sm:block items-center justify-between">
-                    <div className="flex items-center gap-2 sm:block">
-                      <div className="text-xs font-medium text-text-muted uppercase">
+          {/* Period Tabs */}
+          <div
+            className="flex rounded-full p-1 gap-1"
+            style={{ backgroundColor: '#F1E8D7', border: '2px solid #2B2B23' }}
+          >
+            {(['day', 'week', 'month'] as PeriodView[]).map((period) => (
+              <button
+                key={period}
+                onClick={() => setPeriodView(period)}
+                className="px-3 py-1.5 rounded-full text-[13px] font-medium transition-colors"
+                style={{
+                  backgroundColor: periodView === period ? '#115059' : 'transparent',
+                  color: periodView === period ? '#FCF7F1' : '#2B2B23',
+                  border: periodView === period ? '1px solid #2B2B23' : '1px solid transparent',
+                }}
+              >
+                {period.charAt(0).toUpperCase() + period.slice(1)}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Date Navigator */}
+        <div
+          className="flex items-center gap-2 px-3 py-1 rounded-full"
+          style={{ backgroundColor: '#F1E8D7', border: '2px solid #2B2B23' }}
+        >
+          <button
+            onClick={navigatePrev}
+            className="w-7 h-7 rounded-full flex items-center justify-center transition-colors hover:bg-[#FDE1E8]"
+            style={{ border: '1px solid #2B2B23', backgroundColor: '#FFFFFF' }}
+          >
+            <ChevronLeft />
+          </button>
+          <div
+            className="text-[16px] font-semibold min-w-[150px] text-center"
+            style={{ fontFamily: "'Bricolage Grotesque', sans-serif", color: '#2B2B23' }}
+          >
+            {getDateRangeLabel()}
+          </div>
+          <button
+            onClick={navigateNext}
+            className="w-7 h-7 rounded-full flex items-center justify-center transition-colors hover:bg-[#FDE1E8]"
+            style={{ border: '1px solid #2B2B23', backgroundColor: '#FFFFFF' }}
+          >
+            <ChevronRight />
+          </button>
+        </div>
+
+        {/* New Activity Button */}
+        <button
+          onClick={() => handleAddActivity()}
+          className="flex items-center gap-2 px-4 py-2 rounded-full text-[14px] font-semibold transition-colors hover:opacity-90"
+          style={{ backgroundColor: '#5AAED3', color: '#FCF7F1', border: '2px solid #2B2B23' }}
+        >
+          <PlusIcon />
+          New activity
+        </button>
+      </div>
+
+      {/* Filter Row */}
+      <div className="flex items-center gap-2">
+        <span className="text-[12px] font-semibold" style={{ color: '#2B2B23' }}>Sorting:</span>
+
+        {/* Funnel Stage Filter */}
+        <div
+          className="flex items-center justify-between gap-2 min-w-[150px] px-3 py-2 rounded-full cursor-pointer"
+          style={{ backgroundColor: '#F1E8D7', border: '2px solid #2B2B23' }}
+          onClick={() => setSelectedFunnelStage(selectedFunnelStage === 'all' ? 'awareness' : 'all')}
+        >
+          <span className="text-[13px]" style={{ color: '#2B2B23' }}>
+            {selectedFunnelStage === 'all' ? 'All funnel stages' : FUNNEL_STAGES[selectedFunnelStage].name}
+          </span>
+          <ChevronDown />
+        </div>
+
+        {/* Platform Filter */}
+        <div
+          className="flex items-center justify-between gap-2 min-w-[150px] px-3 py-2 rounded-full cursor-pointer"
+          style={{ backgroundColor: '#F1E8D7', border: '2px solid #2B2B23' }}
+          onClick={() => setSelectedPlatform(selectedPlatform === 'all' ? 'linkedin' : 'all')}
+        >
+          <span className="text-[13px]" style={{ color: '#2B2B23' }}>
+            {selectedPlatform === 'all' ? 'All platforms' : PLATFORM_INFO[selectedPlatform].name}
+          </span>
+          <ChevronDown />
+        </div>
+
+        {/* Status Filter */}
+        <div
+          className="flex items-center justify-between gap-2 min-w-[150px] px-3 py-2 rounded-full cursor-pointer"
+          style={{ backgroundColor: '#F1E8D7', border: '2px solid #2B2B23' }}
+          onClick={() => setSelectedStatus(selectedStatus === 'all' ? 'draft' : 'all')}
+        >
+          <span className="text-[13px]" style={{ color: '#2B2B23' }}>
+            {selectedStatus === 'all' ? 'All statuses' : selectedStatus.charAt(0).toUpperCase() + selectedStatus.slice(1)}
+          </span>
+          <ChevronDown />
+        </div>
+      </div>
+
+      {/* Main Calendar Body */}
+      <div className="flex gap-6 flex-1 min-h-0">
+        {/* Calendar Grid Area */}
+        <div className="flex-1 min-w-0">
+          <DndContext
+            sensors={sensors}
+            onDragStart={handleDragStart}
+            onDragEnd={handleDragEnd}
+          >
+            <div
+              className="rounded-3xl overflow-hidden h-full flex flex-col"
+              style={{ backgroundColor: '#F1E8D7', border: '0.5px solid #2B2B23' }}
+            >
+              {/* Week Grid Header */}
+              <div
+                className="grid grid-cols-7"
+                style={{ borderBottom: '0.5px solid #2B2B23' }}
+              >
+                {weekDays.map((day) => {
+                  const isToday = isSameDay(day, new Date());
+                  return (
+                    <div
+                      key={day.toISOString()}
+                      className="py-3 px-1.5 text-center"
+                      style={{ borderRight: '0.5px solid #2B2B23' }}
+                    >
+                      <div
+                        className="text-[11px] font-semibold uppercase tracking-wide"
+                        style={{ color: '#2B2B23' }}
+                      >
                         {format(day, 'EEE')}
                       </div>
                       <div
-                        className={`text-xl sm:text-2xl font-headline font-bold ${
-                          isToday ? 'text-burgundy' : 'text-text-primary'
-                        }`}
+                        className={`text-[20px] font-semibold mt-1 ${isToday ? 'w-8 h-8 rounded-full flex items-center justify-center mx-auto' : ''}`}
+                        style={{
+                          fontFamily: "'Bricolage Grotesque', sans-serif",
+                          color: isToday ? '#FFFFFF' : '#2B2B23',
+                          backgroundColor: isToday ? '#115059' : 'transparent',
+                          border: isToday ? '0.5px solid #2B2B23' : 'none',
+                        }}
                       >
                         {format(day, 'd')}
                       </div>
                     </div>
-                    <div className="text-xs text-text-muted sm:hidden">
-                      {format(day, 'MMM')}
-                    </div>
-                  </div>
+                  );
+                })}
+              </div>
 
-                  {/* Activities */}
-                  <div className="space-y-2">
-                    {dayActivities.map((activity) => (
-                      <DraggableActivity key={activity.id} activity={activity}>
-                        <ActivityCard
-                          activity={activity}
-                          onClick={() => handleActivityClick(activity)}
-                        />
-                      </DraggableActivity>
-                    ))}
+              {/* Week Grid Body */}
+              <div className="flex-1 overflow-auto">
+                <div className="grid grid-cols-7 h-full min-h-[552px]">
+                  {weekDays.map((day) => {
+                    const dayKey = day.toISOString();
+                    const dayActivities = getActivitiesForDay(day);
 
-                    {/* Add Activity Button */}
-                    <button
-                      className="w-full py-2 text-text-muted hover:text-burgundy hover:bg-cream-dark rounded-md transition-colors text-sm font-medium"
-                      onClick={() => handleAddActivity(day)}
-                    >
-                      + Add
-                    </button>
-                  </div>
-                </DroppableDay>
-              );
-            })}
-          </div>
-        )}
-
-        {/* Month View */}
-        {calendarView === 'month' && (
-          <div className="bg-white rounded-lg border-2 border-border overflow-hidden">
-            {/* Weekday Headers */}
-            <div className="grid grid-cols-7 bg-cream-dark border-b border-border">
-              {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day) => (
-                <div key={day} className="py-2 text-center text-xs font-medium text-text-muted uppercase">
-                  {day}
-                </div>
-              ))}
-            </div>
-            {/* Calendar Grid */}
-            <div className="grid grid-cols-7">
-              {monthCalendarDays.map((day) => {
-                const isToday = isSameDay(day, new Date());
-                const isCurrentMonth = isSameMonth(day, currentMonthStart);
-                const dayActivities = getActivitiesForDay(day);
-                const dateStr = day.toISOString();
-
-                return (
-                  <div
-                    key={dateStr}
-                    className={`min-h-[100px] sm:min-h-[120px] border-b border-r border-border p-1 sm:p-2 ${
-                      isToday ? 'bg-dusty-pink-light' : isCurrentMonth ? 'bg-white' : 'bg-cream'
-                    }`}
-                    onDragOver={(e) => {
-                      e.preventDefault();
-                      e.dataTransfer.dropEffect = 'move';
-                    }}
-                    onDrop={(e) => {
-                      e.preventDefault();
-                      const activityId = e.dataTransfer.getData('activityId');
-                      if (activityId) {
-                        setActivities((prev) =>
-                          prev.map((activity) =>
-                            activity.id === activityId
-                              ? { ...activity, date: day }
-                              : activity
-                          )
-                        );
-                      }
-                    }}
-                  >
-                    {/* Day Number */}
-                    <div className="flex items-center justify-between mb-1">
-                      <span
-                        className={`text-sm font-medium ${
-                          isToday
-                            ? 'text-burgundy font-bold'
-                            : isCurrentMonth
-                            ? 'text-text-primary'
-                            : 'text-text-muted'
-                        }`}
+                    return (
+                      <div
+                        key={dayKey}
+                        className="flex flex-col"
+                        style={{
+                          borderRight: '0.5px solid #2B2B23',
+                          backgroundColor: '#FCF7F1',
+                        }}
                       >
-                        {format(day, 'd')}
-                      </span>
-                      {isCurrentMonth && (
-                        <button
-                          onClick={() => handleAddActivity(day)}
-                          className="w-5 h-5 rounded-full text-text-muted hover:text-burgundy hover:bg-cream-dark transition-colors text-xs"
-                        >
-                          +
-                        </button>
-                      )}
-                    </div>
-                    {/* Activity Pills */}
-                    <div className="space-y-0.5">
-                      {dayActivities.slice(0, 3).map((activity) => (
-                        <div
-                          key={activity.id}
-                          draggable
-                          onDragStart={(e) => {
-                            e.dataTransfer.effectAllowed = 'move';
-                            e.dataTransfer.setData('activityId', activity.id);
-                          }}
-                          onClick={() => handleActivityClick(activity)}
-                          className="text-xs px-1.5 py-0.5 rounded truncate cursor-pointer hover:opacity-80 transition-opacity"
-                          style={{
-                            backgroundColor: FUNNEL_STAGES[activity.funnelStage].color,
-                            color: '#FFFFFF',
-                          }}
-                          title={activity.title}
-                        >
-                          {activity.title}
-                        </div>
-                      ))}
-                      {dayActivities.length > 3 && (
-                        <div className="text-xs text-text-muted px-1.5">
-                          +{dayActivities.length - 3} more
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* Quarter View */}
-        {calendarView === 'quarter' && (
-          <div className="space-y-4">
-            {/* Quarter Overview */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {[0, 1, 2].map((monthOffset) => {
-                const monthDate = addMonths(currentQuarterStart, monthOffset);
-                const monthStart = startOfMonth(monthDate);
-                const monthEnd = endOfMonth(monthDate);
-                const monthActivities = filteredActivities.filter((activity) =>
-                  isWithinInterval(new Date(activity.date), { start: monthStart, end: monthEnd })
-                );
-
-                return (
-                  <Card key={monthOffset} className="overflow-hidden">
-                    <div className="bg-teal-dark text-white px-4 py-2 -mx-4 -mt-4 sm:-mx-6 sm:-mt-6 mb-4">
-                      <h4 className="font-headline font-semibold">
-                        {format(monthDate, 'MMMM')}
-                      </h4>
-                    </div>
-                    <div className="space-y-3">
-                      {/* Funnel breakdown for month */}
-                      <div className="flex gap-2 flex-wrap">
-                        {Object.entries(FUNNEL_STAGES).map(([stage, info]) => {
-                          const count = monthActivities.filter((a) => a.funnelStage === stage).length;
+                        {Array.from({ length: maxActivitiesPerDay }, (_, rowIndex) => {
+                          const activity = dayActivities[rowIndex];
                           return (
-                            <div
-                              key={stage}
-                              className="flex items-center gap-1 text-xs"
-                            >
-                              <div
-                                className="w-3 h-3 rounded-full"
-                                style={{ backgroundColor: info.color }}
-                              />
-                              <span className="text-text-muted">{count}</span>
-                            </div>
+                            <DroppableDayCell key={`${dayKey}-row-${rowIndex}`} dayKey={dayKey} rowIndex={rowIndex}>
+                              {activity && (
+                                <div className="p-1 h-full">
+                                  <DraggableActivityCard activity={activity}>
+                                    <ActivityCardNew
+                                      activity={activity}
+                                      onClick={() => handleActivityClick(activity)}
+                                    />
+                                  </DraggableActivityCard>
+                                </div>
+                              )}
+                            </DroppableDayCell>
                           );
                         })}
                       </div>
-                      <p className="text-sm text-text-secondary">
-                        {monthActivities.length} activities planned
-                      </p>
-                      {/* Week breakdown */}
-                      <div className="space-y-2">
-                        {quarterWeeks
-                          .filter((weekStart) => isSameMonth(weekStart, monthDate))
-                          .map((weekStart) => {
-                            const weekActivities = getActivitiesForWeek(weekStart);
-                            const weekEnd = addDays(weekStart, 6);
-                            return (
-                              <div
-                                key={weekStart.toISOString()}
-                                className="flex items-center justify-between p-2 bg-cream rounded-md hover:bg-cream-dark transition-colors cursor-pointer"
-                                onClick={() => {
-                                  setCurrentDate(weekStart);
-                                  setCalendarView('week');
-                                }}
-                              >
-                                <span className="text-sm text-text-secondary">
-                                  {format(weekStart, 'MMM d')} - {format(weekEnd, 'd')}
-                                </span>
-                                <div className="flex items-center gap-2">
-                                  <div className="flex -space-x-1">
-                                    {Object.entries(FUNNEL_STAGES).map(([stage, info]) => {
-                                      const count = weekActivities.filter(
-                                        (a) => a.funnelStage === stage
-                                      ).length;
-                                      if (count === 0) return null;
-                                      return (
-                                        <div
-                                          key={stage}
-                                          className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] text-white font-medium border-2 border-white"
-                                          style={{ backgroundColor: info.color }}
-                                        >
-                                          {count}
-                                        </div>
-                                      );
-                                    })}
-                                  </div>
-                                  <span className="text-xs text-text-muted">
-                                    {weekActivities.length} total
-                                  </span>
-                                </div>
-                              </div>
-                            );
-                          })}
-                      </div>
-                    </div>
-                  </Card>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* Drag Overlay */}
-        <DragOverlay>
-          {activeActivity && (
-            <div className="opacity-80">
-              <ActivityCard activity={activeActivity} />
-            </div>
-          )}
-        </DragOverlay>
-      </DndContext>
-
-      {/* Summary Stats */}
-      <Card>
-        <div className="space-y-4">
-          <div>
-            <h3 className="font-headline font-semibold text-text-primary">
-              {calendarView === 'week' ? 'This Week' : calendarView === 'month' ? 'This Month' : 'This Quarter'} Summary
-            </h3>
-            <p className="text-sm text-text-muted">
-              {activitiesInRange.length} activities planned
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-3 sm:gap-4 justify-center sm:justify-start">
-            {Object.entries(FUNNEL_STAGES).map(([stage, info]) => {
-              const count = activitiesInRange.filter((a) => a.funnelStage === stage).length;
-              return (
-                <div key={stage} className="text-center">
-                  <div
-                    className="w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center text-white font-bold mb-1"
-                    style={{ backgroundColor: info.color }}
-                  >
-                    {count}
-                  </div>
-                  <p className="text-xs text-text-muted">{info.name.split(' ')[0]}</p>
+                    );
+                  })}
                 </div>
-              );
-            })}
-          </div>
+              </div>
+            </div>
+
+            {/* Drag Overlay */}
+            <DragOverlay>
+              {activeActivity && (
+                <div className="opacity-80 w-[140px]">
+                  <ActivityCardNew activity={activeActivity} />
+                </div>
+              )}
+            </DragOverlay>
+          </DndContext>
         </div>
-      </Card>
+
+        {/* Heartie Sidebar */}
+        <aside
+          className="w-64 rounded-3xl overflow-hidden flex flex-col flex-shrink-0"
+          style={{ backgroundColor: '#FFEFD5', border: '0.5px solid #2B2B23' }}
+        >
+          {/* Funnel Health Check Section */}
+          <div className="p-4" style={{ borderBottom: '2px solid #2B2B23' }}>
+            <div className="flex items-center gap-2 mb-3">
+              <ChartIcon />
+              <span
+                className="text-[13px] font-semibold uppercase tracking-wide"
+                style={{ fontFamily: "'Bricolage Grotesque', sans-serif", color: '#2B2B23' }}
+              >
+                Funnel Health Check
+              </span>
+            </div>
+
+            {/* Funnel Bars */}
+            <div className="space-y-1.5">
+              {[
+                { key: 'awareness', label: 'Awareness', value: funnelHealth.awareness },
+                { key: 'consideration', label: 'Consideration', value: funnelHealth.consideration },
+                { key: 'conversion', label: 'Conversion', value: funnelHealth.conversion },
+                { key: 'retention', label: 'Retention', value: funnelHealth.retention },
+              ].map(({ key, label, value }) => (
+                <div key={key} className="flex items-center gap-2">
+                  <span className="text-[11px] w-[90px]" style={{ color: '#2B2B23' }}>{label}</span>
+                  <div
+                    className="flex-1 h-2 rounded-full overflow-hidden"
+                    style={{ backgroundColor: '#FCF7F1', border: '1px solid #2B2B23' }}
+                  >
+                    <div
+                      className="h-full rounded-full"
+                      style={{
+                        width: `${value}%`,
+                        backgroundColor: FUNNEL_STAGES[key as FunnelStage].color,
+                      }}
+                    />
+                  </div>
+                  <span className="text-[11px] font-bold w-8 text-right" style={{ color: '#2B2B23' }}>
+                    {value}%
+                  </span>
+                </div>
+              ))}
+            </div>
+
+            {/* Summary Box */}
+            <div
+              className="mt-3 p-3 rounded-2xl text-[11px]"
+              style={{ backgroundColor: '#D0D480', border: '2px solid #2B2B23', color: '#2B2B23' }}
+            >
+              Overall: Your top-of-funnel is thriving. This week, Heartie suggests layering in more proof and gentle invitations.
+            </div>
+
+            {/* Key Priority */}
+            <div className="mt-3">
+              <div
+                className="text-[11px] font-bold uppercase tracking-wide mb-1"
+                style={{ color: '#6D2239' }}
+              >
+                Key Priority
+              </div>
+              <p className="text-[12px]" style={{ color: '#2B2B23' }}>
+                Create 2 client stories and 1 simple FAQ email.
+              </p>
+            </div>
+          </div>
+
+          {/* Suggested Actions Section */}
+          <div className="p-4 flex-1 overflow-auto">
+            <div className="flex items-center gap-2 mb-3">
+              <SparklesIcon />
+              <span
+                className="text-[13px] font-semibold uppercase tracking-wide"
+                style={{ fontFamily: "'Bricolage Grotesque', sans-serif", color: '#2B2B23' }}
+              >
+                Suggested Actions
+              </span>
+            </div>
+
+            <div className="space-y-2.5">
+              {suggestedActions.map((action, index) => (
+                <SuggestionCard
+                  key={index}
+                  stage={action.stage}
+                  title={action.title}
+                  reason={action.reason}
+                />
+              ))}
+            </div>
+
+            {/* Refresh Button */}
+            <button
+              className="w-full mt-3 py-2.5 rounded-2xl text-[12px] font-semibold transition-colors hover:opacity-90"
+              style={{ backgroundColor: '#FBCB6E', border: '2px solid #2B2B23', color: '#2B2B23' }}
+            >
+              Refresh suggestions
+            </button>
+          </div>
+        </aside>
+      </div>
 
       {/* Activity Detail Panel */}
       <ActivityDetailPanel

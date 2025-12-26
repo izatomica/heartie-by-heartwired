@@ -59,6 +59,52 @@ export interface StrategicCategory {
 }
 
 // Goal Types
+
+// Annual Plan Types (New Strategic Planning)
+export type CoreGoalStatus = 'not_started' | 'in_progress' | 'complete';
+export type OfferType = 'course' | 'membership' | 'service' | 'product' | 'other';
+export type OfferStatus = 'planning' | 'not_started' | 'active';
+
+export interface CoreGoal {
+  id: string;
+  title: string;
+  what: string;
+  whyItMatters: string;
+  successLooksLike: string;
+  status: CoreGoalStatus;
+  order: 1 | 2 | 3;
+}
+
+export interface Offer {
+  id: string;
+  name: string;
+  type: OfferType;
+  launchDate: string;
+  price: string;
+  status: OfferStatus;
+  order: number;
+}
+
+export interface NonNegotiable {
+  id: string;
+  text: string;
+  checked: boolean;
+}
+
+export interface AnnualPlan {
+  id: string;
+  userId: string;
+  year: number;
+  marketingNorthStar: string;
+  coreGoals: CoreGoal[];
+  nonNegotiables: NonNegotiable[];
+  sayingNoTo: string[];
+  offers: Offer[];
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// Legacy Annual Goal (keeping for backwards compatibility)
 export interface AnnualGoal {
   id: string;
   userId: string;
@@ -152,25 +198,25 @@ export interface FunnelStageInfo {
 export const FUNNEL_STAGES: Record<FunnelStage, FunnelStageInfo> = {
   awareness: {
     name: 'Getting Seen',
-    color: '#A8D5E5',
-    emoji: '🟦',
+    color: '#EECE7B',
+    emoji: '🟨',
     description: 'Building visibility and attracting attention',
   },
   consideration: {
     name: 'Building Trust',
-    color: '#9DCDB5',
-    emoji: '🟩',
+    color: '#B7D9FF',
+    emoji: '🟦',
     description: 'Demonstrating expertise and building relationships',
   },
   conversion: {
     name: 'Making the Ask',
-    color: '#E8C86B',
-    emoji: '🟨',
+    color: '#B1D1A0',
+    emoji: '🟩',
     description: 'Converting attention into action',
   },
   retention: {
     name: 'Keeping Connected',
-    color: '#C5C0E8',
+    color: '#B6BBFB',
     emoji: '🟪',
     description: 'Nurturing relationships and encouraging repeat engagement',
   },
