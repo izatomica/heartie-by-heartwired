@@ -20,7 +20,7 @@ Complete PostgreSQL schema with:
 - ✅ Environment variable validation
 
 ### 3. Documentation
-- ✅ Complete setup guide (`database/SETUP.md`)
+- ✅ Complete setup guide (`database/SUPABASE_SETUP.md`)
 - ✅ Environment variables template (`.env.example`)
 
 ## 🚧 What's NOT Done Yet (Next Steps)
@@ -99,7 +99,7 @@ git push origin claude/heartie-marketing-planner-GNXMu
 
 ### With Database (After Integration)
 ```bash
-# 1. Set up Supabase (follow database/SETUP.md)
+# 1. Set up Supabase (follow database/SUPABASE_SETUP.md)
 # 2. Add env vars to Railway
 # 3. Push code
 # 4. Users can sign up and save real data

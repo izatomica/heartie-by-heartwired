@@ -18,9 +18,9 @@ Heartie helps solopreneurs:
 - **Styling**: Tailwind CSS v4
 - **Routing**: React Router v6
 - **Build Tool**: Vite 7
-- **Backend**: Express.js + PostgreSQL
-- **Database**: Railway PostgreSQL
-- **Authentication**: JWT with bcrypt
+- **Hosting**: Railway
+- **Database**: Supabase (PostgreSQL)
+- **Authentication**: Supabase Auth
 
 ## Design System
 
@@ -140,14 +140,13 @@ The app will be available at `http://localhost:3000`
 - [x] Deployment documentation
 
 ### Backend & Database ✅
-- [x] Express REST API with CORS
-- [x] PostgreSQL database schema
-- [x] JWT authentication with bcrypt
-- [x] Protected API routes
-- [x] User data isolation
-- [x] Activities CRUD endpoints
-- [x] Goals management (weekly/annual/quarterly)
-- [ ] Frontend integration with API (in progress)
+- [x] Supabase PostgreSQL database
+- [x] Row Level Security (RLS) policies
+- [x] Supabase Auth integration
+- [x] Database schema with types
+- [x] User data isolation via RLS
+- [x] Supabase client library configured
+- [ ] Frontend integration with Supabase (in progress)
 
 ## The 3-Layer Framework
 
@@ -201,13 +200,11 @@ Heartie is configured for one-click deployment to Railway:
 
 ### Environment Variables
 
-For production deployment to Railway:
-- `DATABASE_URL` - PostgreSQL connection string (automatically provided by Railway)
-- `JWT_SECRET` - Secret key for JWT token signing (generate with `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`)
-- `PORT` - Server port (automatically set by Railway)
-- `NODE_ENV` - Environment mode (automatically set to "production" by Railway)
+For both local development and Railway deployment:
+- `VITE_SUPABASE_URL` - Your Supabase project URL (from Supabase dashboard)
+- `VITE_SUPABASE_ANON_KEY` - Your Supabase anon/public key (from Supabase dashboard)
 
-**📖 For database setup instructions, see [database/RAILWAY_SETUP.md](./database/RAILWAY_SETUP.md)**
+**📖 For complete database setup instructions, see [database/SUPABASE_SETUP.md](./database/SUPABASE_SETUP.md)**
 
 ## Contributing
 
