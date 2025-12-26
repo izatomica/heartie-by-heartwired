@@ -18,7 +18,9 @@ Heartie helps solopreneurs:
 - **Styling**: Tailwind CSS v4
 - **Routing**: React Router v6
 - **Build Tool**: Vite 7
-- **Backend**: Supabase (planned)
+- **Backend**: Express.js + PostgreSQL
+- **Database**: Railway PostgreSQL
+- **Authentication**: JWT with bcrypt
 
 ## Design System
 
@@ -137,6 +139,16 @@ The app will be available at `http://localhost:3000`
 - [x] Build optimization
 - [x] Deployment documentation
 
+### Backend & Database ✅
+- [x] Express REST API with CORS
+- [x] PostgreSQL database schema
+- [x] JWT authentication with bcrypt
+- [x] Protected API routes
+- [x] User data isolation
+- [x] Activities CRUD endpoints
+- [x] Goals management (weekly/annual/quarterly)
+- [ ] Frontend integration with API (in progress)
+
 ## The 3-Layer Framework
 
 Heartie is built on a strategic framework that separates strategy from tactics:
@@ -189,9 +201,13 @@ Heartie is configured for one-click deployment to Railway:
 
 ### Environment Variables
 
-Currently runs entirely on frontend. Future backend integration (Supabase) will require:
-- `VITE_SUPABASE_URL`
-- `VITE_SUPABASE_ANON_KEY`
+For production deployment to Railway:
+- `DATABASE_URL` - PostgreSQL connection string (automatically provided by Railway)
+- `JWT_SECRET` - Secret key for JWT token signing (generate with `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`)
+- `PORT` - Server port (automatically set by Railway)
+- `NODE_ENV` - Environment mode (automatically set to "production" by Railway)
+
+**📖 For database setup instructions, see [database/RAILWAY_SETUP.md](./database/RAILWAY_SETUP.md)**
 
 ## Contributing
 
