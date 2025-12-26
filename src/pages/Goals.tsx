@@ -99,6 +99,11 @@ export function Goals() {
   const [isWeeklyModalOpen, setIsWeeklyModalOpen] = useState(false);
   const [editingWeeklyGoal, setEditingWeeklyGoal] = useState<WeeklyGoal | null>(null);
 
+  // Individual edit modal states
+  const [editingAnnualField, setEditingAnnualField] = useState<'revenue' | 'linkedin' | 'email' | 'launches' | 'priority' | null>(null);
+  const [editingQuarterlyField, setEditingQuarterlyField] = useState<'theme' | 'metrics' | null>(null);
+  const [editingInitiativeIndex, setEditingInitiativeIndex] = useState<number | null>(null);
+
   // Form states
   const [annualForm, setAnnualForm] = useState<AnnualGoalData>(initialAnnualGoal);
   const [quarterlyForm, setQuarterlyForm] = useState<QuarterlyGoalData>(initialQuarterlyGoal);
@@ -120,6 +125,17 @@ export function Goals() {
     setIsAnnualModalOpen(false);
   };
 
+  // Individual annual field handlers
+  const handleOpenAnnualField = (field: 'revenue' | 'linkedin' | 'email' | 'launches' | 'priority') => {
+    setAnnualForm({ ...annualGoal });
+    setEditingAnnualField(field);
+  };
+
+  const handleSaveAnnualField = () => {
+    setAnnualGoal({ ...annualForm });
+    setEditingAnnualField(null);
+  };
+
   // Quarterly goal handlers
   const handleOpenQuarterlyModal = () => {
     setQuarterlyForm({
@@ -132,6 +148,34 @@ export function Goals() {
   const handleSaveQuarterlyGoal = () => {
     setQuarterlyGoal({ ...quarterlyForm });
     setIsQuarterlyModalOpen(false);
+  };
+
+  // Individual quarterly field handlers
+  const handleOpenQuarterlyField = (field: 'theme' | 'metrics') => {
+    setQuarterlyForm({
+      ...quarterlyGoal,
+      initiatives: quarterlyGoal.initiatives.map(i => ({ ...i })),
+    });
+    setEditingQuarterlyField(field);
+  };
+
+  const handleSaveQuarterlyField = () => {
+    setQuarterlyGoal({ ...quarterlyForm });
+    setEditingQuarterlyField(null);
+  };
+
+  // Individual initiative handlers
+  const handleOpenInitiative = (index: number) => {
+    setQuarterlyForm({
+      ...quarterlyGoal,
+      initiatives: quarterlyGoal.initiatives.map(i => ({ ...i })),
+    });
+    setEditingInitiativeIndex(index);
+  };
+
+  const handleSaveInitiative = () => {
+    setQuarterlyGoal({ ...quarterlyForm });
+    setEditingInitiativeIndex(null);
   };
 
   const handleUpdateInitiative = (index: number, field: keyof QuarterlyInitiative, value: string | number | boolean) => {
@@ -297,7 +341,7 @@ export function Goals() {
         <div className="space-y-6">
           <div className="grid md:grid-cols-2 gap-6">
             {/* Revenue Goal */}
-            <Card>
+            <Card className="cursor-pointer hover:shadow-md transition-all" onClick={() => handleOpenAnnualField('revenue')}>
               <div className="flex items-center gap-2 mb-4">
                 <span className="text-2xl">💰</span>
                 <h2 className="text-lg font-headline font-semibold text-text-primary">REVENUE</h2>
@@ -321,7 +365,7 @@ export function Goals() {
             </Card>
 
             {/* LinkedIn Goal */}
-            <Card>
+            <Card className="cursor-pointer hover:shadow-md transition-all" onClick={() => handleOpenAnnualField('linkedin')}>
               <div className="flex items-center gap-2 mb-4">
                 <span className="text-2xl">📈</span>
                 <h2 className="text-lg font-headline font-semibold text-text-primary">LINKEDIN</h2>
@@ -345,7 +389,7 @@ export function Goals() {
             </Card>
 
             {/* Email Goal */}
-            <Card>
+            <Card className="cursor-pointer hover:shadow-md transition-all" onClick={() => handleOpenAnnualField('email')}>
               <div className="flex items-center gap-2 mb-4">
                 <span className="text-2xl">📧</span>
                 <h2 className="text-lg font-headline font-semibold text-text-primary">EMAIL LIST</h2>
@@ -369,7 +413,7 @@ export function Goals() {
             </Card>
 
             {/* Launches Goal */}
-            <Card>
+            <Card className="cursor-pointer hover:shadow-md transition-all" onClick={() => handleOpenAnnualField('launches')}>
               <div className="flex items-center gap-2 mb-4">
                 <span className="text-2xl">🚀</span>
                 <h2 className="text-lg font-headline font-semibold text-text-primary">LAUNCHES</h2>
@@ -394,7 +438,7 @@ export function Goals() {
           </div>
 
           {/* #1 Priority */}
-          <Card>
+          <Card className="cursor-pointer hover:shadow-md transition-all" onClick={() => handleOpenAnnualField('priority')}>
             <div className="flex items-center gap-2 mb-4">
               <span className="text-2xl">🎯</span>
               <h2 className="text-lg font-headline font-semibold text-text-primary">#1 PRIORITY THIS YEAR</h2>
@@ -456,7 +500,7 @@ export function Goals() {
             <p className="text-text-secondary">January - March</p>
           </div>
 
-          <Card>
+          <Card className="cursor-pointer hover:shadow-md transition-all" onClick={() => handleOpenQuarterlyField('theme')}>
             <div className="flex items-center gap-2 mb-4">
               <span className="text-2xl">🎯</span>
               <h2 className="text-lg font-headline font-semibold text-text-primary">QUARTERLY THEME</h2>
@@ -467,8 +511,8 @@ export function Goals() {
           <div>
             <h3 className="text-lg font-headline font-semibold text-text-primary mb-4">KEY INITIATIVES</h3>
             <div className="space-y-3">
-              {quarterlyGoal.initiatives.map((initiative) => (
-                <Card key={initiative.id} padding="md">
+              {quarterlyGoal.initiatives.map((initiative, index) => (
+                <Card key={initiative.id} padding="md" className="cursor-pointer hover:shadow-md transition-all" onClick={() => handleOpenInitiative(index)}>
                   <div className="flex items-start gap-3">
                     <span className={initiative.progressPercentage >= 100 ? 'text-success text-xl' : 'text-text-muted text-xl'}>
                       {initiative.progressPercentage >= 100 ? '✓' : '○'}
@@ -492,7 +536,7 @@ export function Goals() {
             </div>
           </div>
 
-          <Card>
+          <Card className="cursor-pointer hover:shadow-md transition-all" onClick={() => handleOpenQuarterlyField('metrics')}>
             <h3 className="text-lg font-headline font-semibold text-text-primary mb-4">QUARTERLY METRICS TARGET</h3>
             <div className="space-y-4">
               <div>
@@ -899,6 +943,277 @@ export function Goals() {
             </div>
           </div>
         </div>
+      </Modal>
+
+      {/* Individual Annual Field Modals */}
+      {/* Revenue Modal */}
+      <Modal isOpen={editingAnnualField === 'revenue'} onClose={() => setEditingAnnualField(null)} title="Edit Revenue Goal">
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-text-primary mb-1">Target ($)</label>
+              <input
+                type="number"
+                className="input w-full"
+                value={annualForm.revenueTarget}
+                onChange={(e) => setAnnualForm(prev => ({ ...prev, revenueTarget: Number(e.target.value) || 0 }))}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-text-primary mb-1">Current ($)</label>
+              <input
+                type="number"
+                className="input w-full"
+                value={annualForm.revenueCurrent}
+                onChange={(e) => setAnnualForm(prev => ({ ...prev, revenueCurrent: Number(e.target.value) || 0 }))}
+              />
+            </div>
+          </div>
+          <div className="flex gap-3 justify-end pt-4">
+            <Button variant="secondary" onClick={() => setEditingAnnualField(null)}>Cancel</Button>
+            <Button onClick={handleSaveAnnualField}>Save</Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* LinkedIn Modal */}
+      <Modal isOpen={editingAnnualField === 'linkedin'} onClose={() => setEditingAnnualField(null)} title="Edit LinkedIn Goal">
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-text-primary mb-1">Target (followers)</label>
+              <input
+                type="number"
+                className="input w-full"
+                value={annualForm.linkedinTarget}
+                onChange={(e) => setAnnualForm(prev => ({ ...prev, linkedinTarget: Number(e.target.value) || 0 }))}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-text-primary mb-1">Current</label>
+              <input
+                type="number"
+                className="input w-full"
+                value={annualForm.linkedinCurrent}
+                onChange={(e) => setAnnualForm(prev => ({ ...prev, linkedinCurrent: Number(e.target.value) || 0 }))}
+              />
+            </div>
+          </div>
+          <div className="flex gap-3 justify-end pt-4">
+            <Button variant="secondary" onClick={() => setEditingAnnualField(null)}>Cancel</Button>
+            <Button onClick={handleSaveAnnualField}>Save</Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Email Modal */}
+      <Modal isOpen={editingAnnualField === 'email'} onClose={() => setEditingAnnualField(null)} title="Edit Email List Goal">
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-text-primary mb-1">Target (subscribers)</label>
+              <input
+                type="number"
+                className="input w-full"
+                value={annualForm.emailTarget}
+                onChange={(e) => setAnnualForm(prev => ({ ...prev, emailTarget: Number(e.target.value) || 0 }))}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-text-primary mb-1">Current</label>
+              <input
+                type="number"
+                className="input w-full"
+                value={annualForm.emailCurrent}
+                onChange={(e) => setAnnualForm(prev => ({ ...prev, emailCurrent: Number(e.target.value) || 0 }))}
+              />
+            </div>
+          </div>
+          <div className="flex gap-3 justify-end pt-4">
+            <Button variant="secondary" onClick={() => setEditingAnnualField(null)}>Cancel</Button>
+            <Button onClick={handleSaveAnnualField}>Save</Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Launches Modal */}
+      <Modal isOpen={editingAnnualField === 'launches'} onClose={() => setEditingAnnualField(null)} title="Edit Launches Goal">
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-text-primary mb-1">Target (offers)</label>
+              <input
+                type="number"
+                className="input w-full"
+                value={annualForm.launchesTarget}
+                onChange={(e) => setAnnualForm(prev => ({ ...prev, launchesTarget: Number(e.target.value) || 0 }))}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-text-primary mb-1">Current</label>
+              <input
+                type="number"
+                className="input w-full"
+                value={annualForm.launchesCurrent}
+                onChange={(e) => setAnnualForm(prev => ({ ...prev, launchesCurrent: Number(e.target.value) || 0 }))}
+              />
+            </div>
+          </div>
+          <div className="flex gap-3 justify-end pt-4">
+            <Button variant="secondary" onClick={() => setEditingAnnualField(null)}>Cancel</Button>
+            <Button onClick={handleSaveAnnualField}>Save</Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Priority Modal */}
+      <Modal isOpen={editingAnnualField === 'priority'} onClose={() => setEditingAnnualField(null)} title="Edit #1 Priority">
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-text-primary mb-1">Your #1 priority this year</label>
+            <Textarea
+              value={annualForm.topPriority}
+              onChange={(e) => setAnnualForm(prev => ({ ...prev, topPriority: e.target.value }))}
+              rows={3}
+            />
+          </div>
+          <div className="flex gap-3 justify-end pt-4">
+            <Button variant="secondary" onClick={() => setEditingAnnualField(null)}>Cancel</Button>
+            <Button onClick={handleSaveAnnualField}>Save</Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Individual Quarterly Field Modals */}
+      {/* Theme Modal */}
+      <Modal isOpen={editingQuarterlyField === 'theme'} onClose={() => setEditingQuarterlyField(null)} title="Edit Quarterly Theme">
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-text-primary mb-1">Theme</label>
+            <Input
+              value={quarterlyForm.theme}
+              onChange={(e) => setQuarterlyForm(prev => ({ ...prev, theme: e.target.value }))}
+              placeholder="e.g., Foundation, Launch, Scale"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-text-primary mb-1">Description</label>
+            <Textarea
+              value={quarterlyForm.description}
+              onChange={(e) => setQuarterlyForm(prev => ({ ...prev, description: e.target.value }))}
+              rows={3}
+            />
+          </div>
+          <div className="flex gap-3 justify-end pt-4">
+            <Button variant="secondary" onClick={() => setEditingQuarterlyField(null)}>Cancel</Button>
+            <Button onClick={handleSaveQuarterlyField}>Save</Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Quarterly Metrics Modal */}
+      <Modal isOpen={editingQuarterlyField === 'metrics'} onClose={() => setEditingQuarterlyField(null)} title="Edit Quarterly Metrics">
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-text-primary mb-1">Revenue Target ($)</label>
+              <input
+                type="number"
+                className="input w-full"
+                value={quarterlyForm.revenueTarget}
+                onChange={(e) => setQuarterlyForm(prev => ({ ...prev, revenueTarget: Number(e.target.value) || 0 }))}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-text-primary mb-1">Revenue Current ($)</label>
+              <input
+                type="number"
+                className="input w-full"
+                value={quarterlyForm.revenueCurrent}
+                onChange={(e) => setQuarterlyForm(prev => ({ ...prev, revenueCurrent: Number(e.target.value) || 0 }))}
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-text-primary mb-1">LinkedIn Growth Target</label>
+              <input
+                type="number"
+                className="input w-full"
+                value={quarterlyForm.linkedinTarget}
+                onChange={(e) => setQuarterlyForm(prev => ({ ...prev, linkedinTarget: Number(e.target.value) || 0 }))}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-text-primary mb-1">LinkedIn Growth Current</label>
+              <input
+                type="number"
+                className="input w-full"
+                value={quarterlyForm.linkedinCurrent}
+                onChange={(e) => setQuarterlyForm(prev => ({ ...prev, linkedinCurrent: Number(e.target.value) || 0 }))}
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-text-primary mb-1">Email Growth Target</label>
+              <input
+                type="number"
+                className="input w-full"
+                value={quarterlyForm.emailTarget}
+                onChange={(e) => setQuarterlyForm(prev => ({ ...prev, emailTarget: Number(e.target.value) || 0 }))}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-text-primary mb-1">Email Growth Current</label>
+              <input
+                type="number"
+                className="input w-full"
+                value={quarterlyForm.emailCurrent}
+                onChange={(e) => setQuarterlyForm(prev => ({ ...prev, emailCurrent: Number(e.target.value) || 0 }))}
+              />
+            </div>
+          </div>
+          <div className="flex gap-3 justify-end pt-4">
+            <Button variant="secondary" onClick={() => setEditingQuarterlyField(null)}>Cancel</Button>
+            <Button onClick={handleSaveQuarterlyField}>Save</Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Individual Initiative Modal */}
+      <Modal
+        isOpen={editingInitiativeIndex !== null}
+        onClose={() => setEditingInitiativeIndex(null)}
+        title="Edit Initiative"
+      >
+        {editingInitiativeIndex !== null && quarterlyForm.initiatives[editingInitiativeIndex] && (
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-text-primary mb-1">Initiative Title</label>
+              <Input
+                value={quarterlyForm.initiatives[editingInitiativeIndex].title}
+                onChange={(e) => handleUpdateInitiative(editingInitiativeIndex, 'title', e.target.value)}
+                placeholder="What do you want to achieve?"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-text-primary mb-1">Progress (%)</label>
+              <input
+                type="number"
+                min="0"
+                max="100"
+                className="input w-full"
+                value={quarterlyForm.initiatives[editingInitiativeIndex].progressPercentage}
+                onChange={(e) => handleUpdateInitiative(editingInitiativeIndex, 'progressPercentage', Math.min(100, Math.max(0, Number(e.target.value) || 0)))}
+              />
+            </div>
+            <div className="flex gap-3 justify-end pt-4">
+              <Button variant="secondary" onClick={() => setEditingInitiativeIndex(null)}>Cancel</Button>
+              <Button onClick={handleSaveInitiative}>Save</Button>
+            </div>
+          </div>
+        )}
       </Modal>
     </div>
   );
