@@ -1,26 +1,61 @@
 -- ====================================
--- Migration: Extend profiles table for full auth system
--- Run this on existing databases that have the base schema
+-- Migration: Create profiles table for full auth system
+-- This creates the table if it doesn't exist, or adds columns if it does
 -- ====================================
 
--- Add new columns to profiles table
-ALTER TABLE public.profiles
-  ADD COLUMN IF NOT EXISTS display_name TEXT,
-  ADD COLUMN IF NOT EXISTS full_name TEXT,
-  ADD COLUMN IF NOT EXISTS profile_photo_url TEXT,
-  ADD COLUMN IF NOT EXISTS business_description TEXT,
-  ADD COLUMN IF NOT EXISTS website TEXT,
-  ADD COLUMN IF NOT EXISTS business_type TEXT CHECK (business_type IN ('service', 'product', 'digital', 'mixed')),
-  ADD COLUMN IF NOT EXISTS business_stage TEXT CHECK (business_stage IN ('starting', 'growing', 'established')),
-  ADD COLUMN IF NOT EXISTS timezone TEXT DEFAULT 'America/New_York',
-  ADD COLUMN IF NOT EXISTS tier TEXT DEFAULT 'starter' CHECK (tier IN ('starter', 'growth', 'partner')),
-  ADD COLUMN IF NOT EXISTS notify_weekly_reminder BOOLEAN DEFAULT true,
-  ADD COLUMN IF NOT EXISTS notify_heartie_tips BOOLEAN DEFAULT true,
-  ADD COLUMN IF NOT EXISTS notify_product_updates BOOLEAN DEFAULT false,
-  ADD COLUMN IF NOT EXISTS notify_community BOOLEAN DEFAULT false,
-  ADD COLUMN IF NOT EXISTS onboarding_complete BOOLEAN DEFAULT false,
-  ADD COLUMN IF NOT EXISTS onboarding_step INTEGER DEFAULT 0,
-  ADD COLUMN IF NOT EXISTS last_active_at TIMESTAMPTZ DEFAULT NOW();
+-- Create profiles table if it doesn't exist
+CREATE TABLE IF NOT EXISTS public.profiles (
+  id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  email TEXT,
+  name TEXT,
+  display_name TEXT,
+  full_name TEXT,
+  profile_photo_url TEXT,
+  business_description TEXT,
+  website TEXT,
+  business_type TEXT CHECK (business_type IN ('service', 'product', 'digital', 'mixed')),
+  business_stage TEXT CHECK (business_stage IN ('starting', 'growing', 'established')),
+  timezone TEXT DEFAULT 'America/New_York',
+  tier TEXT DEFAULT 'starter' CHECK (tier IN ('starter', 'growth', 'partner')),
+  notify_weekly_reminder BOOLEAN DEFAULT true,
+  notify_heartie_tips BOOLEAN DEFAULT true,
+  notify_product_updates BOOLEAN DEFAULT false,
+  notify_community BOOLEAN DEFAULT false,
+  onboarding_complete BOOLEAN DEFAULT false,
+  onboarding_step INTEGER DEFAULT 0,
+  last_active_at TIMESTAMPTZ DEFAULT NOW(),
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Add columns if they don't exist (for existing databases)
+-- These will silently fail if columns already exist from CREATE TABLE above
+DO $$
+BEGIN
+  ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS display_name TEXT;
+  ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS full_name TEXT;
+  ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS profile_photo_url TEXT;
+  ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS business_description TEXT;
+  ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS website TEXT;
+  ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS timezone TEXT DEFAULT 'America/New_York';
+  ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS tier TEXT DEFAULT 'starter';
+  ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS notify_weekly_reminder BOOLEAN DEFAULT true;
+  ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS notify_heartie_tips BOOLEAN DEFAULT true;
+  ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS notify_product_updates BOOLEAN DEFAULT false;
+  ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS notify_community BOOLEAN DEFAULT false;
+  ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS onboarding_complete BOOLEAN DEFAULT false;
+  ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS onboarding_step INTEGER DEFAULT 0;
+  ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS last_active_at TIMESTAMPTZ DEFAULT NOW();
+
+  -- Add columns with CHECK constraints separately (IF NOT EXISTS doesn't work with CHECK in same statement)
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'profiles' AND column_name = 'business_type') THEN
+    ALTER TABLE public.profiles ADD COLUMN business_type TEXT CHECK (business_type IN ('service', 'product', 'digital', 'mixed'));
+  END IF;
+
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'profiles' AND column_name = 'business_stage') THEN
+    ALTER TABLE public.profiles ADD COLUMN business_stage TEXT CHECK (business_stage IN ('starting', 'growing', 'established'));
+  END IF;
+END $$;
 
 -- Migrate existing name column to display_name if display_name is null
 UPDATE public.profiles
@@ -41,6 +76,37 @@ BEGIN
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Create trigger to auto-create profile on user signup
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+
+-- ====================================
+-- Row Level Security (RLS)
+-- ====================================
+
+-- Enable RLS on profiles
+ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
+
+-- Policy: Users can read their own profile
+DROP POLICY IF EXISTS "Users can read own profile" ON public.profiles;
+CREATE POLICY "Users can read own profile"
+  ON public.profiles FOR SELECT
+  USING (auth.uid() = id);
+
+-- Policy: Users can update their own profile
+DROP POLICY IF EXISTS "Users can update own profile" ON public.profiles;
+CREATE POLICY "Users can update own profile"
+  ON public.profiles FOR UPDATE
+  USING (auth.uid() = id);
+
+-- Policy: Allow the trigger to insert profiles (service role)
+DROP POLICY IF EXISTS "Service role can insert profiles" ON public.profiles;
+CREATE POLICY "Service role can insert profiles"
+  ON public.profiles FOR INSERT
+  WITH CHECK (true);
 
 -- ====================================
 -- Storage bucket for profile photos
