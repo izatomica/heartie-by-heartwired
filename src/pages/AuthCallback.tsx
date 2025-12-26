@@ -11,6 +11,11 @@ export function AuthCallback() {
 
   useEffect(() => {
     const handleCallback = async () => {
+      if (!supabase) {
+        setError('Authentication is not configured. Please contact support.');
+        return;
+      }
+
       try {
         // Get the session from the URL hash (Supabase handles this automatically)
         const { error } = await supabase.auth.getSession();

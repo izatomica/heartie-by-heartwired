@@ -1,24 +1,42 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
 // Validate environment variables
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error(
+// Create Supabase client (or null if env vars missing)
+let supabaseClient: SupabaseClient | null = null;
+
+if (supabaseUrl && supabaseAnonKey) {
+  supabaseClient = createClient(supabaseUrl, supabaseAnonKey);
+} else {
+  console.warn(
     'Missing Supabase environment variables. ' +
-    'Please ensure VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY are set in your .env file.'
+    'The app will run with mock data only. ' +
+    'Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in your .env file to enable database features.'
   );
 }
 
-// Create Supabase client
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// Export the client (may be null if not configured)
+export const supabase = supabaseClient;
+
+// Helper to check if Supabase is configured
+export const isSupabaseConfigured = () => supabase !== null;
+
+// Helper to throw if Supabase is not configured
+const requireSupabase = (): SupabaseClient => {
+  if (!supabase) {
+    throw new Error('Supabase is not configured. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in your .env file.');
+  }
+  return supabase;
+};
 
 // Auth helpers
 export const auth = {
   // Sign up with email and password
   signUp: async (email: string, password: string, userData?: { name?: string; businessName?: string; industry?: string; mainGoal?: string }) => {
-    const { data, error } = await supabase.auth.signUp({
+    const client = requireSupabase();
+    const { data, error } = await client.auth.signUp({
       email,
       password,
       options: {
@@ -32,7 +50,8 @@ export const auth = {
 
   // Sign in with email and password
   signIn: async (email: string, password: string) => {
-    const { data, error } = await supabase.auth.signInWithPassword({
+    const client = requireSupabase();
+    const { data, error } = await client.auth.signInWithPassword({
       email,
       password
     });
@@ -43,27 +62,31 @@ export const auth = {
 
   // Sign out
   signOut: async () => {
-    const { error } = await supabase.auth.signOut();
+    const client = requireSupabase();
+    const { error } = await client.auth.signOut();
     if (error) throw error;
   },
 
   // Get current user
   getCurrentUser: async () => {
-    const { data: { user }, error } = await supabase.auth.getUser();
+    const client = requireSupabase();
+    const { data: { user }, error } = await client.auth.getUser();
     if (error) throw error;
     return user;
   },
 
   // Get current session
   getSession: async () => {
-    const { data: { session }, error } = await supabase.auth.getSession();
+    const client = requireSupabase();
+    const { data: { session }, error } = await client.auth.getSession();
     if (error) throw error;
     return session;
   },
 
   // Listen to auth state changes
   onAuthStateChange: (callback: (event: string, session: any) => void) => {
-    return supabase.auth.onAuthStateChange(callback);
+    const client = requireSupabase();
+    return client.auth.onAuthStateChange(callback);
   }
 };
 
@@ -123,7 +146,8 @@ export const db = {
   // Activities
   activities: {
     getAll: async () => {
-      const { data, error } = await supabase
+      const client = requireSupabase();
+      const { data, error } = await client
         .from('activities')
         .select('*')
         .order('date', { ascending: false });
@@ -133,7 +157,8 @@ export const db = {
     },
 
     create: async (activity: Omit<Activity, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
-      const { data, error } = await supabase
+      const client = requireSupabase();
+      const { data, error } = await client
         .from('activities')
         .insert([activity])
         .select()
@@ -144,7 +169,8 @@ export const db = {
     },
 
     update: async (id: string, updates: Partial<Activity>) => {
-      const { data, error } = await supabase
+      const client = requireSupabase();
+      const { data, error } = await client
         .from('activities')
         .update(updates)
         .eq('id', id)
@@ -156,7 +182,8 @@ export const db = {
     },
 
     delete: async (id: string) => {
-      const { error } = await supabase
+      const client = requireSupabase();
+      const { error } = await client
         .from('activities')
         .delete()
         .eq('id', id);
@@ -168,7 +195,8 @@ export const db = {
   // Weekly Goals
   weeklyGoals: {
     getAll: async (weekStartDate?: string) => {
-      let query = supabase
+      const client = requireSupabase();
+      let query = client
         .from('weekly_goals')
         .select('*')
         .order('created_at', { ascending: false });
@@ -183,7 +211,8 @@ export const db = {
     },
 
     create: async (goal: Omit<WeeklyGoal, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
-      const { data, error } = await supabase
+      const client = requireSupabase();
+      const { data, error } = await client
         .from('weekly_goals')
         .insert([goal])
         .select()
@@ -194,7 +223,8 @@ export const db = {
     },
 
     update: async (id: string, updates: Partial<WeeklyGoal>) => {
-      const { data, error } = await supabase
+      const client = requireSupabase();
+      const { data, error } = await client
         .from('weekly_goals')
         .update(updates)
         .eq('id', id)
@@ -209,7 +239,8 @@ export const db = {
   // Annual Goals
   annualGoals: {
     getAll: async (year?: number) => {
-      let query = supabase
+      const client = requireSupabase();
+      let query = client
         .from('annual_goals')
         .select('*')
         .order('year', { ascending: false });
@@ -224,7 +255,8 @@ export const db = {
     },
 
     upsert: async (goal: Omit<AnnualGoal, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
-      const { data, error } = await supabase
+      const client = requireSupabase();
+      const { data, error } = await client
         .from('annual_goals')
         .upsert([goal], {
           onConflict: 'user_id,year,category'
@@ -240,7 +272,8 @@ export const db = {
   // Quarterly Goals
   quarterlyGoals: {
     getAll: async (year?: number, quarter?: number) => {
-      let query = supabase
+      const client = requireSupabase();
+      let query = client
         .from('quarterly_goals')
         .select('*')
         .order('year', { ascending: false })
@@ -259,7 +292,8 @@ export const db = {
     },
 
     upsert: async (goal: Omit<QuarterlyGoal, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
-      const { data, error } = await supabase
+      const client = requireSupabase();
+      const { data, error } = await client
         .from('quarterly_goals')
         .upsert([goal], {
           onConflict: 'user_id,year,quarter'

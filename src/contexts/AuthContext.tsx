@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState, useCallback, type ReactNode } from 'react';
-import { supabase } from '@/lib/supabase';
+import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import type {
   UserProfile,
   AuthState,
@@ -7,6 +7,31 @@ import type {
   ProfileRow,
 } from '@/types/auth';
 import { transformProfileRow, transformProfileUpdate } from '@/types/auth';
+
+// Mock user profile for when Supabase is not configured
+const mockUserProfile: UserProfile = {
+  id: 'mock-user-1',
+  email: 'demo@heartie.app',
+  displayName: 'Sarah',
+  fullName: 'Sarah Demo',
+  profilePhotoUrl: null,
+  businessName: 'Coaching by Sarah',
+  businessDescription: 'Life coaching for busy professionals',
+  website: null,
+  businessType: 'service',
+  businessStage: 'growing',
+  timezone: 'America/New_York',
+  tier: 'growth',
+  notifyWeeklyReminder: true,
+  notifyHeartieTips: true,
+  notifyProductUpdates: false,
+  notifyCommunity: false,
+  onboardingComplete: true,
+  onboardingStep: 6,
+  createdAt: new Date().toISOString(),
+  updatedAt: new Date().toISOString(),
+  lastActiveAt: new Date().toISOString(),
+};
 
 interface AuthContextType extends AuthState {
   signInWithMagicLink: (email: string) => Promise<{ error: Error | null }>;
@@ -29,6 +54,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Fetch user profile from profiles table
   const fetchProfile = useCallback(async (userId: string): Promise<UserProfile | null> => {
+    if (!supabase) return null;
+
     const { data, error } = await supabase
       .from('profiles')
       .select('*')
@@ -45,8 +72,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Initialize auth state
   useEffect(() => {
+    // If Supabase is not configured, use mock user for demo mode
+    if (!isSupabaseConfigured() || !supabase) {
+      console.log('Supabase not configured - running in demo mode with mock data');
+      setState({
+        user: mockUserProfile,
+        session: null,
+        isLoading: false,
+        isAuthenticated: true,
+      });
+      return;
+    }
+
     // Get initial session
     const initializeAuth = async () => {
+      if (!supabase) return;
       try {
         const { data: { session } } = await supabase.auth.getSession();
 
@@ -98,6 +138,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Sign in with magic link
   const signInWithMagicLink = async (email: string): Promise<{ error: Error | null }> => {
+    if (!supabase) {
+      return { error: new Error('Supabase is not configured') };
+    }
+
     try {
       const { error } = await supabase.auth.signInWithOtp({
         email,
@@ -118,6 +162,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Sign in with Google
   const signInWithGoogle = async (): Promise<{ error: Error | null }> => {
+    if (!supabase) {
+      return { error: new Error('Supabase is not configured') };
+    }
+
     try {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
@@ -138,11 +186,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Sign out
   const signOut = async (): Promise<void> => {
+    if (!supabase) return;
     await supabase.auth.signOut();
   };
 
   // Update profile
   const updateProfile = async (data: ProfileUpdateData): Promise<{ error: Error | null }> => {
+    if (!supabase) {
+      return { error: new Error('Supabase is not configured') };
+    }
+
     if (!state.user?.id) {
       return { error: new Error('No user logged in') };
     }
@@ -173,6 +226,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Upload profile photo
   const uploadProfilePhoto = async (file: File): Promise<{ url: string | null; error: Error | null }> => {
+    if (!supabase) {
+      return { url: null, error: new Error('Supabase is not configured') };
+    }
+
     if (!state.user?.id) {
       return { url: null, error: new Error('No user logged in') };
     }
