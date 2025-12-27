@@ -53,8 +53,15 @@ src/
 │   ├── calendar/     # ActivityCard, ActivityDetailPanel, AddActivityModal
 │   ├── layout/       # Layout (collapsible sidebar), Layout.css
 │   └── ui/           # Button, Input, Card, Modal
-├── pages/            # Dashboard, Calendar, Goals, Strategy, Templates, Insights
-│   └── Calendar.css  # Calendar-specific styles (views, filters, campaigns)
+├── pages/
+│   ├── Dashboard.tsx      # Weekly summary and funnel health
+│   ├── Calendar.tsx       # Drag-and-drop calendar with multiple views
+│   ├── Calendar.css       # Calendar-specific styles (views, filters, campaigns)
+│   ├── ActivityEditor.tsx # Full-page activity editor (opens in new tab)
+│   ├── Goals.tsx          # Annual/Quarterly/Weekly goals
+│   ├── Strategy.tsx       # 7 strategic categories
+│   ├── Templates.tsx      # Template library
+│   └── Insights.tsx       # Analytics and metrics
 ├── lib/              # Utilities, mockData, supabase client
 ├── types/            # TypeScript type definitions
 ├── contexts/         # React contexts (AuthContext)
@@ -72,7 +79,24 @@ type Platform = 'instagram' | 'facebook' | 'tiktok' | 'x' | 'linkedin'
 
 ### Activity Status Types
 ```typescript
-type ActivityStatus = 'idea' | 'draft' | 'ready' | 'scheduled' | 'running' | 'complete';
+type ActivityStatus = 'idea' | 'in_progress' | 'scheduled' | 'running' | 'done';
+```
+
+### Activity Types (Content Format)
+```typescript
+type ActivityType =
+  | 'static_image'    // Static Image Content
+  | 'text_content'    // Text Content
+  | 'carousel'        // Carousel
+  | 'video'           // Video
+  | 'podcast'         // Podcast
+  | 'webinar'         // Webinar
+  | 'newsletter'      // Newsletter
+  | 'sales_emails'    // Sales Emails
+  | 'strategy_tasks'  // Strategy Tasks
+  | 'ads'             // Ads
+  | 'organic_campaign'// Organic Campaign
+  | 'ads_campaign';   // Ads Campaign
 ```
 
 ### Funnel Stage Types
@@ -229,6 +253,48 @@ For both local development and Railway deployment:
 **📖 For complete database setup instructions, see [database/SUPABASE_SETUP.md](./database/SUPABASE_SETUP.md)**
 
 ## Recent Changes (December 2025)
+
+### Activity Editor Page (NEW)
+- Full-page activity editor at `/activity/:id` route
+- Two-column layout: metadata on left, content editor on right
+- Opens in new tab from "Open full view window" button in detail panel
+- Features:
+  - Large content textarea (min-height 400px)
+  - Preview mode toggle (view rendered content)
+  - Auto-save indicator and Save button
+  - Character count display
+  - Unsaved changes warning on page leave
+  - Back to Calendar navigation
+- Located outside main Layout for focused editing experience
+
+### Updated Activity Types System
+Replaced old activity types with comprehensive content format options:
+- **Static Image Content** - Single image posts
+- **Text Content** - Text-only posts
+- **Carousel** - Multi-image slideshows
+- **Video** - Video content
+- **Podcast** - Audio content
+- **Webinar** - Live/recorded presentations
+- **Newsletter** - Email newsletters
+- **Sales Emails** - Sales-focused email sequences
+- **Strategy Tasks** - Planning and strategy work
+- **Ads** - Advertising content
+- **Organic Campaign** - Multi-post organic campaigns
+- **Ads Campaign** - Paid advertising campaigns
+
+### Updated Activity Status System
+Simplified and clearer status workflow:
+- **Idea** - Initial concept (gray)
+- **In Progress** - Currently working on (yellow)
+- **Scheduled** - Ready and scheduled (green)
+- **Running** - Live/published (blue)
+- **Done** - Completed (brown)
+
+### Calendar UI Improvements
+- Changed drag-drop highlight color from pink to beige (#f1e8d7)
+- Added hover animation to activity cards (2% scale + darker background)
+- Activity Type filter replaces Content Pillar filter
+- Renamed "Platform" to "Channel" throughout the UI
 
 ### Collapsible Sidebar with Hover Expansion
 - Sidebar collapses to 72px showing only icons by default
