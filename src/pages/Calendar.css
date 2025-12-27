@@ -412,14 +412,19 @@
   flex-direction: column;
   border-right: 0.5px solid #2b2b23;
   background: #fcf7f1;
+  min-height: 200px;
 }
 
 .day-column:last-child {
   border-right: none;
 }
 
+.day-column-over {
+  background: rgba(255, 228, 216, 0.5);
+}
+
 .day-cell {
-  height: 92px;
+  min-height: 84px;
   border-bottom: 0.5px solid #2b2b23;
   padding: 4px;
   position: relative;
@@ -433,6 +438,37 @@
 
 .day-cell-over {
   background: #ffe4d8;
+}
+
+.empty-drop-zone {
+  flex: 1;
+  min-height: 84px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px dashed transparent;
+  transition: all 0.2s;
+}
+
+.empty-drop-zone.day-cell-over {
+  border-color: #115059;
+  background: rgba(255, 228, 216, 0.7);
+}
+
+.empty-drop-hint {
+  display: none;
+  color: #9ca3af;
+  font-size: 12px;
+}
+
+.empty-drop-zone.day-cell-over .empty-drop-hint {
+  display: block;
+  color: #115059;
+}
+
+.sortable-activity-wrapper {
+  width: 100%;
+  height: 100%;
 }
 
 /* ===== ACTIVITY CARD ===== */
@@ -719,7 +755,6 @@
 .month-grid-row {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  flex: 1;
   position: relative; /* For absolute positioning of campaign bars */
 }
 
@@ -731,7 +766,13 @@
   display: flex;
   flex-direction: column;
   min-height: 88px;
-  overflow: hidden; /* Prevent content from expanding cell width */
+  overflow-x: hidden; /* Prevent horizontal overflow */
+  overflow-y: visible; /* Allow vertical expansion */
+  transition: background 0.2s;
+}
+
+.month-cell-over {
+  background: rgba(255, 228, 216, 0.7) !important;
 }
 
 .month-day-cell:last-child {
@@ -774,8 +815,8 @@
   display: flex;
   flex-direction: column;
   gap: 3px;
-  overflow: hidden;
-  flex: 1;
+  overflow-x: hidden;
+  overflow-y: visible;
   min-width: 0; /* Allow flex item to shrink below content size */
 }
 
@@ -789,10 +830,14 @@
   background: #f1e8d7;
   font-size: 11px;
   overflow: hidden;
-  cursor: pointer;
+  cursor: grab;
   transition: background 0.15s;
   min-width: 0; /* Allow shrinking */
   max-width: 100%; /* Don't exceed parent width */
+}
+
+.sortable-month-activity-wrapper {
+  width: 100%;
 }
 
 .month-activity-card:hover {
@@ -987,6 +1032,21 @@
   border-radius: 16px;
   padding: 16px;
   min-height: 400px;
+}
+
+.day-view-column-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Day view uses day-column class for drag and drop */
+.day-grid-body .day-column {
+  border-right: none;
+  min-height: 400px;
+  background: #fcf7f1;
+  border-radius: 16px;
+  padding: 16px;
 }
 
 /* Day View Activity Card - Larger with more detail */

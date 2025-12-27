@@ -30,10 +30,10 @@ type PeriodView = 'day' | 'week' | 'month';
 const ACTIVITIES_STORAGE_KEY = 'heartie_activities';
 
 // Sortable Activity Card wrapper - supports both reordering within column and moving between columns
-function SortableActivityCard({ activity, children }: { activity: Activity; children: React.ReactNode }) {
+function SortableActivityCard({ activity, dayKey, children }: { activity: Activity; dayKey: string; children: React.ReactNode }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: activity.id,
-    data: { activity },
+    data: { activity, dayKey, type: 'activity' },
   });
 
   const style = {
@@ -44,24 +44,68 @@ function SortableActivityCard({ activity, children }: { activity: Activity; chil
   };
 
   return (
-    <div ref={setNodeRef} style={style} {...listeners} {...attributes}>
+    <div ref={setNodeRef} style={style} {...listeners} {...attributes} className="sortable-activity-wrapper">
       {children}
     </div>
   );
 }
 
-// Droppable Day Cell wrapper
-function DroppableDayCell({ dayKey, rowIndex, children }: { dayKey: string; rowIndex: number; children?: React.ReactNode }) {
+// Droppable Day Column wrapper - the entire column is droppable
+function DroppableDayColumn({ dayKey, children, isEmpty }: { dayKey: string; children?: React.ReactNode; isEmpty?: boolean }) {
   const { setNodeRef, isOver } = useDroppable({
-    id: `${dayKey}-row-${rowIndex}`,
-    data: { dayKey, rowIndex },
+    id: `day-column-${dayKey}`,
+    data: { dayKey, type: 'day-column' },
   });
 
   return (
     <div
       ref={setNodeRef}
-      className={`day-cell ${isOver ? 'day-cell-over' : ''}`}
+      className={`day-column ${isOver ? 'day-column-over' : ''}`}
     >
+      {children}
+      {/* Empty drop zone at the bottom */}
+      {isEmpty && (
+        <div className={`day-cell empty-drop-zone ${isOver ? 'day-cell-over' : ''}`}>
+          <span className="empty-drop-hint">Drop here</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Droppable Month Cell wrapper - each day cell in month view is droppable
+function DroppableMonthCell({ dayKey, children, className }: { dayKey: string; children?: React.ReactNode; className?: string }) {
+  const { setNodeRef, isOver } = useDroppable({
+    id: `month-cell-${dayKey}`,
+    data: { dayKey, type: 'month-cell' },
+  });
+
+  return (
+    <div
+      ref={setNodeRef}
+      className={`${className || ''} ${isOver ? 'month-cell-over' : ''}`}
+    >
+      {children}
+    </div>
+  );
+}
+
+// Sortable Month Activity Card wrapper - smaller version for month view
+function SortableMonthActivityCard({ activity, dayKey, children }: { activity: Activity; dayKey: string; children: React.ReactNode }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: activity.id,
+    data: { activity, dayKey, type: 'activity' },
+  });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    zIndex: isDragging ? 100 : 1,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style} {...listeners} {...attributes} className="sortable-month-activity-wrapper">
       {children}
     </div>
   );
@@ -300,27 +344,50 @@ export function Calendar() {
 
     if (!over) return;
 
-    const activeId = active.id.toString();
+    const activeIdStr = active.id.toString();
     const overId = over.id.toString();
 
     // Find the dragged activity
-    const draggedActivity = activities.find(a => a.id === activeId);
+    const draggedActivity = activities.find(a => a.id === activeIdStr);
     if (!draggedActivity) return;
 
-    // Check if dropping on a day cell (empty slot)
-    const dayKeyMatch = overId.match(/^(.+)-row-\d+$/);
-    if (dayKeyMatch) {
-      const dayKey = dayKeyMatch[1];
-      const newDate = new Date(dayKey);
+    // Get the source day from the dragged activity's data
+    const activeDayKey = active.data.current?.dayKey;
+
+    // Check if dropping on a day column (empty column or column drop zone) - week view
+    if (overId.startsWith('day-column-')) {
+      const targetDayKey = overId.replace('day-column-', '');
+      const newDate = new Date(targetDayKey);
 
       if (!isNaN(newDate.getTime())) {
-        setActivities((prev) =>
-          prev.map((activity) =>
-            activity.id === activeId
+        // Move to the end of the target day
+        setActivities((prev) => {
+          const updated = prev.map((activity) =>
+            activity.id === activeIdStr
               ? { ...activity, date: newDate }
               : activity
-          )
-        );
+          );
+          return updated;
+        });
+      }
+      return;
+    }
+
+    // Check if dropping on a month cell (day cell in month view)
+    if (overId.startsWith('month-cell-')) {
+      const targetDayKey = overId.replace('month-cell-', '');
+      const newDate = new Date(targetDayKey);
+
+      if (!isNaN(newDate.getTime())) {
+        // Move to the target day
+        setActivities((prev) => {
+          const updated = prev.map((activity) =>
+            activity.id === activeIdStr
+              ? { ...activity, date: newDate }
+              : activity
+          );
+          return updated;
+        });
       }
       return;
     }
@@ -328,15 +395,15 @@ export function Calendar() {
     // Check if dropping on another activity (reorder or move)
     const overActivity = activities.find(a => a.id === overId);
     if (overActivity) {
-      const draggedDate = new Date(draggedActivity.date).toDateString();
-      const overDate = new Date(overActivity.date).toDateString();
+      const draggedDayKey = activeDayKey || format(new Date(draggedActivity.date), 'yyyy-MM-dd');
+      const overDayKey = over.data.current?.dayKey || format(new Date(overActivity.date), 'yyyy-MM-dd');
 
-      if (draggedDate === overDate) {
+      if (draggedDayKey === overDayKey) {
         // Same day - reorder within column
         const dayActivities = activities.filter(a =>
-          new Date(a.date).toDateString() === draggedDate
+          format(new Date(a.date), 'yyyy-MM-dd') === draggedDayKey
         );
-        const oldIndex = dayActivities.findIndex(a => a.id === activeId);
+        const oldIndex = dayActivities.findIndex(a => a.id === activeIdStr);
         const newIndex = dayActivities.findIndex(a => a.id === overId);
 
         if (oldIndex !== -1 && newIndex !== -1 && oldIndex !== newIndex) {
@@ -345,21 +412,42 @@ export function Calendar() {
           // Update the main activities array with new order
           setActivities((prev) => {
             const otherActivities = prev.filter(a =>
-              new Date(a.date).toDateString() !== draggedDate
+              format(new Date(a.date), 'yyyy-MM-dd') !== draggedDayKey
             );
             return [...otherActivities, ...reordered];
           });
         }
       } else {
-        // Different day - move to the target day
+        // Different day - move to the target day at the position of the over activity
         const newDate = new Date(overActivity.date);
-        setActivities((prev) =>
-          prev.map((activity) =>
-            activity.id === activeId
+
+        setActivities((prev) => {
+          // First, update the date of the dragged activity
+          const withUpdatedDate = prev.map((activity) =>
+            activity.id === activeIdStr
               ? { ...activity, date: newDate }
               : activity
-          )
-        );
+          );
+
+          // Then reorder within the target day to place it at the correct position
+          const targetDayActivities = withUpdatedDate.filter(a =>
+            format(new Date(a.date), 'yyyy-MM-dd') === overDayKey
+          );
+          const otherActivities = withUpdatedDate.filter(a =>
+            format(new Date(a.date), 'yyyy-MM-dd') !== overDayKey
+          );
+
+          // Find the new positions
+          const draggedIdx = targetDayActivities.findIndex(a => a.id === activeIdStr);
+          const overIdx = targetDayActivities.findIndex(a => a.id === overId);
+
+          if (draggedIdx !== -1 && overIdx !== -1 && draggedIdx !== overIdx) {
+            const reordered = arrayMove(targetDayActivities, draggedIdx, overIdx);
+            return [...otherActivities, ...reordered];
+          }
+
+          return withUpdatedDate;
+        });
       }
     }
   };
@@ -952,34 +1040,26 @@ export function Calendar() {
                   {/* Body */}
                   <div className="week-grid-body">
                     {weekDays.map((day) => {
-                      const dayKey = day.toISOString();
+                      const dayKey = format(day, 'yyyy-MM-dd');
                       const dayActivities = getActivitiesForDay(day);
                       const activityIds = dayActivities.map(a => a.id);
 
                       return (
-                        <div key={dayKey} className="day-column">
+                        <DroppableDayColumn key={dayKey} dayKey={dayKey} isEmpty={dayActivities.length === 0}>
                           <SortableContext items={activityIds} strategy={verticalListSortingStrategy}>
                             {/* Render activities */}
-                            {dayActivities.map((activity, index) => (
-                              <DroppableDayCell key={`${dayKey}-row-${index}`} dayKey={dayKey} rowIndex={index}>
-                                <SortableActivityCard activity={activity}>
+                            {dayActivities.map((activity) => (
+                              <div key={activity.id} className="day-cell">
+                                <SortableActivityCard activity={activity} dayKey={dayKey}>
                                   <ActivityCard
                                     activity={activity}
                                     onClick={() => handleActivityClick(activity)}
                                   />
                                 </SortableActivityCard>
-                              </DroppableDayCell>
-                            ))}
-                            {/* Empty drop zones for remaining slots */}
-                            {Array.from({ length: Math.max(0, 6 - dayActivities.length) }, (_, i) => (
-                              <DroppableDayCell
-                                key={`${dayKey}-row-${dayActivities.length + i}`}
-                                dayKey={dayKey}
-                                rowIndex={dayActivities.length + i}
-                              />
+                              </div>
                             ))}
                           </SortableContext>
-                        </div>
+                        </DroppableDayColumn>
                       );
                     })}
                   </div>
@@ -1041,9 +1121,11 @@ export function Calendar() {
                             })}
                           </div>
                         )}
-                        {/* Day cells */}
+                        {/* Day cells with drag and drop */}
                         {rowDays.map((dayInfo) => {
+                          const dayKey = format(dayInfo.date, 'yyyy-MM-dd');
                           const dayActivities = getActivitiesForDate(dayInfo.date);
+                          const activityIds = dayActivities.map(a => a.id);
                           const cellClasses = [
                             'month-day-cell',
                             !dayInfo.isCurrentMonth && 'other-month',
@@ -1051,31 +1133,34 @@ export function Calendar() {
                           ].filter(Boolean).join(' ');
 
                           return (
-                            <div key={dayInfo.date.toISOString()} className={cellClasses}>
+                            <DroppableMonthCell key={dayInfo.date.toISOString()} dayKey={dayKey} className={cellClasses}>
                               <div className="month-day-number">{format(dayInfo.date, 'd')}</div>
                               <div className="month-day-cell-content">
                                 {/* Spacer for campaign bar */}
                                 {hasCampaigns && <div className="campaign-spacer" />}
-                                {/* Activities */}
-                                <div className="month-activities">
-                                  {dayActivities.slice(0, 2).map((activity) => {
-                                    const stageClass = activity.funnelStage;
-                                    return (
-                                      <div
-                                        key={activity.id}
-                                        className="month-activity-card"
-                                        onClick={() => handleActivityClick(activity)}
-                                      >
-                                        <span className={`month-funnel-dot ${stageClass}`} />
-                                        <iconify-icon icon={platformIcons[activity.platform]} style={{ fontSize: '10px', flexShrink: 0 }} />
-                                        <span className="month-activity-title">{activity.title}</span>
-                                        <span className={`status-square status-${activity.status}`} />
-                                      </div>
-                                    );
-                                  })}
-                                </div>
+                                {/* Activities with drag and drop */}
+                                <SortableContext items={activityIds} strategy={verticalListSortingStrategy}>
+                                  <div className="month-activities">
+                                    {dayActivities.map((activity) => {
+                                      const stageClass = activity.funnelStage;
+                                      return (
+                                        <SortableMonthActivityCard key={activity.id} activity={activity} dayKey={dayKey}>
+                                          <div
+                                            className="month-activity-card"
+                                            onClick={() => handleActivityClick(activity)}
+                                          >
+                                            <span className={`month-funnel-dot ${stageClass}`} />
+                                            <iconify-icon icon={platformIcons[activity.platform]} style={{ fontSize: '10px', flexShrink: 0 }} />
+                                            <span className="month-activity-title">{activity.title}</span>
+                                            <span className={`status-square status-${activity.status}`} />
+                                          </div>
+                                        </SortableMonthActivityCard>
+                                      );
+                                    })}
+                                  </div>
+                                </SortableContext>
                               </div>
-                            </div>
+                            </DroppableMonthCell>
                           );
                         })}
                       </div>
@@ -1089,6 +1174,9 @@ export function Calendar() {
             {layoutView === 'calendar' && periodView === 'day' && (() => {
               const dayCampaigns = getDayCampaigns();
               const hasDayCampaigns = dayCampaigns.length > 0;
+              const dayKey = format(currentDate, 'yyyy-MM-dd');
+              const dayActivities = getActivitiesForDay(currentDate);
+              const activityIds = dayActivities.map(a => a.id);
 
               return (
                 <div className="day-grid-container">
@@ -1102,70 +1190,75 @@ export function Calendar() {
 
                   {/* Body - Single column with activities */}
                   <div className="day-grid-body">
-                    <div className="day-view-column">
-                      {/* Campaign bars for the day */}
-                      {hasDayCampaigns && (
-                        <div className="day-campaigns">
-                          {dayCampaigns.map((campaign) => {
-                            // Determine if this is start/end of campaign
-                            const isStart = isSameDay(currentDate, new Date(campaign.startDate));
-                            const isEnd = isSameDay(currentDate, new Date(campaign.endDate));
+                    <DroppableDayColumn dayKey={dayKey} isEmpty={dayActivities.length === 0}>
+                      <div className="day-view-column-inner">
+                        {/* Campaign bars for the day */}
+                        {hasDayCampaigns && (
+                          <div className="day-campaigns">
+                            {dayCampaigns.map((campaign) => {
+                              // Determine if this is start/end of campaign
+                              const isStart = isSameDay(currentDate, new Date(campaign.startDate));
+                              const isEnd = isSameDay(currentDate, new Date(campaign.endDate));
 
-                            const barClasses = [
-                              'day-campaign-bar',
-                              isStart && 'is-start',
-                              isEnd && 'is-end',
-                            ].filter(Boolean).join(' ');
+                              const barClasses = [
+                                'day-campaign-bar',
+                                isStart && 'is-start',
+                                isEnd && 'is-end',
+                              ].filter(Boolean).join(' ');
+
+                              return (
+                                <div
+                                  key={campaign.id}
+                                  className={barClasses}
+                                  style={{ backgroundColor: campaign.color }}
+                                >
+                                  <span className="campaign-bar-name">{campaign.name}</span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                        {/* Activities with drag and drop */}
+                        <SortableContext items={activityIds} strategy={verticalListSortingStrategy}>
+                          {dayActivities.map((activity) => {
+                            const stageInfo = FUNNEL_STAGES[activity.funnelStage];
+                            const platformInfo = PLATFORM_INFO[activity.platform];
 
                             return (
-                              <div
-                                key={campaign.id}
-                                className={barClasses}
-                                style={{ backgroundColor: campaign.color }}
-                              >
-                                <span className="campaign-bar-name">{campaign.name}</span>
-                              </div>
+                              <SortableActivityCard key={activity.id} activity={activity} dayKey={dayKey}>
+                                <div
+                                  className="day-activity-card"
+                                  data-stage={activity.funnelStage}
+                                  onClick={() => handleActivityClick(activity)}
+                                >
+                                  <div className="day-activity-header-row">
+                                    <div className="funnel-badge">
+                                      <div
+                                        className="funnel-dot"
+                                        style={{ background: stageInfo.color }}
+                                      />
+                                    </div>
+                                    <div className="day-activity-title">{activity.title}</div>
+                                  </div>
+                                  <div className="day-activity-meta-group">
+                                    <iconify-icon icon={platformIcons[activity.platform]} />
+                                    <span>{platformInfo.name}</span>
+                                    <span className="separator">·</span>
+                                    <span className={`status-square status-${activity.status}`} />
+                                    <span>{statusLabels[activity.status]}</span>
+                                  </div>
+                                </div>
+                              </SortableActivityCard>
                             );
                           })}
-                        </div>
-                      )}
-                      {/* Activities */}
-                      {getActivitiesForDay(currentDate).map((activity) => {
-                        const stageInfo = FUNNEL_STAGES[activity.funnelStage];
-                        const platformInfo = PLATFORM_INFO[activity.platform];
-
-                        return (
-                          <div
-                            key={activity.id}
-                            className="day-activity-card"
-                            data-stage={activity.funnelStage}
-                            onClick={() => handleActivityClick(activity)}
-                          >
-                            <div className="day-activity-header-row">
-                              <div className="funnel-badge">
-                                <div
-                                  className="funnel-dot"
-                                  style={{ background: stageInfo.color }}
-                                />
-                              </div>
-                              <div className="day-activity-title">{activity.title}</div>
-                            </div>
-                            <div className="day-activity-meta-group">
-                              <iconify-icon icon={platformIcons[activity.platform]} />
-                              <span>{platformInfo.name}</span>
-                              <span className="separator">·</span>
-                              <span className={`status-square status-${activity.status}`} />
-                              <span>{statusLabels[activity.status]}</span>
-                            </div>
+                        </SortableContext>
+                        {dayActivities.length === 0 && !hasDayCampaigns && (
+                          <div style={{ textAlign: 'center', color: '#9ca3af', padding: '32px', fontSize: '14px' }}>
+                            No activities scheduled for this day
                           </div>
-                        );
-                      })}
-                      {getActivitiesForDay(currentDate).length === 0 && !hasDayCampaigns && (
-                        <div style={{ textAlign: 'center', color: '#9ca3af', padding: '32px', fontSize: '14px' }}>
-                          No activities scheduled for this day
-                        </div>
-                      )}
-                    </div>
+                        )}
+                      </div>
+                    </DroppableDayColumn>
                   </div>
                 </div>
               );
