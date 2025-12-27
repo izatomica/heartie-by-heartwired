@@ -15,6 +15,7 @@ export function ActivityCard({ activity, onClick }: ActivityCardProps) {
     draft: { bg: 'var(--color-warning-light)', text: 'var(--color-warning)', dot: '●' },
     ready: { bg: 'var(--color-success-light)', text: 'var(--color-success)', dot: '●' },
     scheduled: { bg: 'var(--color-info-light)', text: 'var(--color-info)', dot: '●' },
+    running: { bg: '#E8E9FE', text: '#6366F1', dot: '▶' },
     complete: { bg: 'var(--color-success-light)', text: 'var(--color-success)', dot: '✓' },
   };
 

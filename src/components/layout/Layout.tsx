@@ -8,22 +8,27 @@ export interface LayoutProps {
   children: ReactNode;
 }
 
+// Main navigation items with Lucide icons
 const mainNavItems = [
-  { label: 'Dashboard', path: '/dashboard', icon: 'mdi:view-dashboard-outline' },
-  { label: 'Calendar', path: '/calendar', icon: 'mdi:calendar-outline' },
-  { label: 'Goals', path: '/goals', icon: 'mdi:target' },
-  { label: 'Strategy', path: '/strategy', icon: 'mdi:lightbulb-outline' },
+  { label: 'Dashboard', path: '/dashboard', icon: 'lucide:layout-dashboard' },
+  { label: 'Calendar', path: '/calendar', icon: 'lucide:calendar' },
+  { label: 'Goals', path: '/goals', icon: 'lucide:target' },
+  { label: 'Strategy', path: '/strategy', icon: 'lucide:layers' },
+  { label: 'Templates', path: '/templates', icon: 'lucide:files' },
+  { label: 'Insights', path: '/insights', icon: 'lucide:bar-chart' },
 ];
 
+// Tools section items
 const toolNavItems = [
-  { label: 'Templates', path: '/templates', icon: 'mdi:file-document-outline' },
-  { label: 'Insights', path: '/insights', icon: 'mdi:chart-line' },
+  { label: 'Heartie', path: '/chat', icon: 'lucide:message-circle' },
+  { label: 'Settings', path: '/settings', icon: 'lucide:settings' },
 ];
 
 export function Layout({ children }: LayoutProps) {
   const location = useLocation();
   const { signOut } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [sidebarHovered, setSidebarHovered] = useState(false);
 
   const handleSignOut = async () => {
     await signOut();
@@ -33,14 +38,20 @@ export function Layout({ children }: LayoutProps) {
     setMobileMenuOpen(false);
   };
 
+  const handleSidebarMouseEnter = () => {
+    setSidebarHovered(true);
+  };
+
+  const handleSidebarMouseLeave = () => {
+    setSidebarHovered(false);
+  };
+
   return (
     <>
       {/* Mobile Header */}
       <div className="mobile-header">
         <div className="sidebar-logo">
-          <div className="sidebar-logo-icon">
-            <span style={{ fontSize: '24px' }}>🌸</span>
-          </div>
+          <div className="sidebar-logo-icon">H</div>
           <div className="sidebar-logo-text">
             <span>Heartie</span>
             <span>by Heartwired</span>
@@ -51,7 +62,7 @@ export function Layout({ children }: LayoutProps) {
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           aria-label="Toggle menu"
         >
-          <iconify-icon icon={mobileMenuOpen ? 'mdi:close' : 'mdi:menu'} width="24" height="24" />
+          <iconify-icon icon={mobileMenuOpen ? 'lucide:x' : 'lucide:menu'} width="24" height="24" />
         </button>
       </div>
 
@@ -63,12 +74,15 @@ export function Layout({ children }: LayoutProps) {
 
       <div id="app-shell">
         {/* Sidebar */}
-        <aside id="sidebar" className={mobileMenuOpen ? 'expanded' : ''}>
+        <aside
+          id="sidebar"
+          className={`${mobileMenuOpen ? 'expanded' : ''} ${sidebarHovered ? 'hover-expanded' : ''}`}
+          onMouseEnter={handleSidebarMouseEnter}
+          onMouseLeave={handleSidebarMouseLeave}
+        >
           {/* Logo */}
           <div className="sidebar-logo">
-            <div className="sidebar-logo-icon">
-              <span style={{ fontSize: '28px' }}>🌸</span>
-            </div>
+            <div className="sidebar-logo-icon">H</div>
             <div className="sidebar-logo-text">
               <span>Heartie</span>
               <span>by Heartwired</span>
@@ -85,8 +99,8 @@ export function Layout({ children }: LayoutProps) {
                 className={`sidebar-nav-item ${location.pathname === item.path ? 'active' : ''}`}
                 onClick={closeMobileMenu}
               >
-                <iconify-icon icon={item.icon} width="18" height="18" />
-                {item.label}
+                <iconify-icon icon={item.icon} width="20" height="20" />
+                <span className="nav-label">{item.label}</span>
               </Link>
             ))}
 
@@ -98,16 +112,16 @@ export function Layout({ children }: LayoutProps) {
                 className={`sidebar-nav-item ${location.pathname === item.path ? 'active' : ''}`}
                 onClick={closeMobileMenu}
               >
-                <iconify-icon icon={item.icon} width="18" height="18" />
-                {item.label}
+                <iconify-icon icon={item.icon} width="20" height="20" />
+                <span className="nav-label">{item.label}</span>
               </Link>
             ))}
           </nav>
 
-          {/* New Idea Button */}
+          {/* Sparkles / New Idea Button */}
           <button className="sidebar-new-idea">
-            <iconify-icon icon="mdi:creation" width="16" height="16" />
-            New idea
+            <iconify-icon icon="lucide:sparkles" width="18" height="18" />
+            <span className="button-label">New idea</span>
           </button>
 
           {/* Footer */}
@@ -116,14 +130,14 @@ export function Layout({ children }: LayoutProps) {
               className="sidebar-nav-item"
               onClick={handleSignOut}
             >
-              <iconify-icon icon="mdi:logout" width="18" height="18" />
-              Log out
+              <iconify-icon icon="lucide:log-out" width="20" height="20" />
+              <span className="nav-label">Log out</span>
             </button>
           </div>
         </aside>
 
         {/* Main Surface */}
-        <div id="main-surface">
+        <div id="main-surface" className={sidebarHovered ? 'sidebar-expanded' : ''}>
           <div id="main-content">
             {children}
           </div>

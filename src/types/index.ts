@@ -1,7 +1,8 @@
 // Activity Types
 export type FunnelStage = 'awareness' | 'consideration' | 'conversion' | 'retention';
-export type ActivityStatus = 'idea' | 'draft' | 'ready' | 'scheduled' | 'complete';
-export type Platform = 'linkedin' | 'email' | 'instagram' | 'facebook' | 'tiktok' | 'blog' | 'other';
+export type ActivityStatus = 'idea' | 'draft' | 'ready' | 'scheduled' | 'running' | 'complete';
+// Channel type (formerly Platform)
+export type Platform = 'instagram' | 'facebook' | 'tiktok' | 'x' | 'linkedin' | 'email' | 'blog' | 'meta_ads' | 'google_ads' | 'tiktok_ads' | 'x_ads' | 'other';
 
 export interface Activity {
   id: string;
@@ -174,6 +175,18 @@ export interface MetricLog {
   createdAt: Date;
 }
 
+// Campaign Types
+export interface Campaign {
+  id: string;
+  userId: string;
+  name: string;
+  startDate: Date;
+  endDate: Date;
+  color: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 // Template Types
 export interface Template {
   id: string;
@@ -222,13 +235,21 @@ export const FUNNEL_STAGES: Record<FunnelStage, FunnelStageInfo> = {
   },
 };
 
-// Platform Display Info
-export const PLATFORM_INFO: Record<Platform, { name: string; icon: string }> = {
-  linkedin: { name: 'LinkedIn', icon: '💼' },
-  email: { name: 'Email', icon: '📧' },
+// Channel Display Info (formerly Platform)
+export const CHANNEL_INFO: Record<Platform, { name: string; icon: string }> = {
   instagram: { name: 'Instagram', icon: '📱' },
   facebook: { name: 'Facebook', icon: '👥' },
   tiktok: { name: 'TikTok', icon: '🎵' },
+  x: { name: 'X', icon: '✖️' },
+  linkedin: { name: 'LinkedIn', icon: '💼' },
+  email: { name: 'Email', icon: '📧' },
   blog: { name: 'Blog', icon: '📝' },
+  meta_ads: { name: 'Meta Ads', icon: '📢' },
+  google_ads: { name: 'Google Ads', icon: '🔍' },
+  tiktok_ads: { name: 'TikTok Ads', icon: '🎯' },
+  x_ads: { name: 'X Ads', icon: '📣' },
   other: { name: 'Other', icon: '📄' },
 };
+
+// Keep PLATFORM_INFO as alias for backwards compatibility
+export const PLATFORM_INFO = CHANNEL_INFO;

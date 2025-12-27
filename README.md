@@ -50,12 +50,34 @@ Heartie helps solopreneurs:
 ```
 src/
 ├── components/
-│   ├── layout/       # Header, Layout
+│   ├── calendar/     # ActivityCard, ActivityDetailPanel, AddActivityModal
+│   ├── layout/       # Layout (collapsible sidebar), Layout.css
 │   └── ui/           # Button, Input, Card, Modal
 ├── pages/            # Dashboard, Calendar, Goals, Strategy, Templates, Insights
-├── lib/              # Utilities and helpers
+│   └── Calendar.css  # Calendar-specific styles (views, filters, campaigns)
+├── lib/              # Utilities, mockData, supabase client
 ├── types/            # TypeScript type definitions
+├── contexts/         # React contexts (AuthContext)
 └── hooks/            # Custom React hooks
+```
+
+## Key Types
+
+### Channel/Platform Types
+```typescript
+type Platform = 'instagram' | 'facebook' | 'tiktok' | 'x' | 'linkedin'
+              | 'email' | 'blog' | 'meta_ads' | 'google_ads'
+              | 'tiktok_ads' | 'x_ads' | 'other';
+```
+
+### Activity Status Types
+```typescript
+type ActivityStatus = 'idea' | 'draft' | 'ready' | 'scheduled' | 'running' | 'complete';
+```
+
+### Funnel Stage Types
+```typescript
+type FunnelStage = 'awareness' | 'consideration' | 'conversion' | 'retention';
 ```
 
 ## Getting Started
@@ -205,6 +227,67 @@ For both local development and Railway deployment:
 - `VITE_SUPABASE_ANON_KEY` - Your Supabase anon/public key (from Supabase dashboard)
 
 **📖 For complete database setup instructions, see [database/SUPABASE_SETUP.md](./database/SUPABASE_SETUP.md)**
+
+## Recent Changes (December 2025)
+
+### Collapsible Sidebar with Hover Expansion
+- Sidebar collapses to 72px showing only icons by default
+- Expands to 230px on hover revealing full labels
+- Smooth CSS transitions (0.3s ease)
+- Switched from MDI to Lucide icons throughout
+- Added "Tools" section with Heartie chat and Settings
+- "New idea" sparkles button in collapsed and expanded states
+
+### Calendar Page Enhancements
+
+#### Multiple Layout Views
+- **Calendar View**: Traditional day/week/month grid with drag-and-drop
+- **List View**: Kanban-style columns by status (Idea, In Progress, Scheduled, Running, Done)
+- **Funnel View**: Activities grouped by funnel stage (4 columns)
+
+#### Multiple Period Views
+- **Day View**: Single day focus with campaign bars
+- **Week View**: Monday-Sunday week grid (default)
+- **Month View**: Full month calendar with campaign bars spanning rows
+
+#### Campaign Bars
+- Visual campaign bars span across calendar days
+- Shows campaign name and duration
+- Supports multiple campaigns per time period
+- Different styling for start/end/middle segments
+
+#### Dynamic Filter Dropdowns
+Filters now show only options that exist in the current view/period:
+
+- **Activity Types**: Shows only content types present in visible activities
+- **Channels**: Shows only channels used in visible activities
+- **Funnel Stages**: Filter by marketing funnel stage (hidden in Funnel view)
+- **Status**: Filter by activity status (hidden in List view)
+
+#### Expanded Channel Types
+Added new marketing channels beyond social platforms:
+- Social: Instagram, Facebook, TikTok, X, LinkedIn
+- Content: Email, Blog
+- Advertising: Meta Ads, Google Ads, TikTok Ads, X Ads
+- Other: Generic fallback
+
+#### Dropdown UI Improvements
+- Proper rounded corners when open (16px top, 0 bottom)
+- Chevron rotation animation when expanded
+- "Disabled" state for empty filter options
+- Click-outside-to-close behavior
+
+### Activity Persistence (localStorage)
+- Activity changes now persist across page refreshes
+- Saves to localStorage under key `heartie_activities`
+- Loads saved activities on page load
+- Falls back to mock data if no saved data exists
+
+### Calendar Drag-and-Drop
+- Added @dnd-kit/sortable for within-column reordering
+- Activities can be reordered within the same day column
+- Activities can be moved between different days
+- Drag overlay shows activity preview while dragging
 
 ## Contributing
 

@@ -233,6 +233,10 @@
   font-weight: 600;
 }
 
+.filter-dropdown-wrapper {
+  position: relative;
+}
+
 .select-filter {
   min-width: 150px;
   border-radius: 9999px;
@@ -244,12 +248,79 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 8px;
   cursor: pointer;
   transition: background 0.18s;
+  white-space: nowrap;
 }
 
 .select-filter:hover {
   background: #e8dfc9;
+}
+
+.select-filter.open {
+  background: #e8dfc9;
+  border-radius: 16px 16px 0 0;
+}
+
+.select-filter iconify-icon {
+  transition: transform 0.2s;
+}
+
+.select-filter.open iconify-icon {
+  transform: rotate(180deg);
+}
+
+.filter-dropdown-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  min-width: 100%;
+  background: #f1e8d7;
+  border: 2px solid #2b2b23;
+  border-top: none;
+  border-radius: 0 0 12px 12px;
+  overflow: hidden;
+  z-index: 100;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.filter-dropdown-item {
+  padding: 10px 12px;
+  font-size: 13px;
+  color: #2b2b23;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: background 0.15s;
+}
+
+.filter-dropdown-item:hover {
+  background: #e8dfc9;
+}
+
+.filter-dropdown-item.selected {
+  background: #dfd6c5;
+  font-weight: 600;
+}
+
+.filter-dropdown-item.disabled {
+  color: #9b9b9b;
+  cursor: default;
+  font-style: italic;
+}
+
+.filter-dropdown-item.disabled:hover {
+  background: transparent;
+}
+
+.filter-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
 }
 
 /* ===== CALENDAR BODY ===== */
@@ -444,6 +515,10 @@
   margin-top: 2px;
 }
 
+.activity-meta .separator {
+  color: #9ca3af;
+}
+
 /* ===== HEARTIE SIDEBAR ===== */
 .heartie-sidebar {
   width: 256px;
@@ -612,4 +687,732 @@
 
 .btn-refresh:hover {
   background: #eece7b;
+}
+
+/* ===== MONTH VIEW ===== */
+.month-grid-container {
+  flex: 1;
+  overflow: auto;
+  background: #f1e8d7;
+  border-radius: 24px;
+  border: 0.5px solid #2b2b23;
+  display: flex;
+  flex-direction: column;
+}
+
+.month-grid-header {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  background: #f1e8d7;
+  border-bottom: 0.5px solid #2b2b23;
+  position: sticky;
+  top: 0;
+  z-index: 5;
+}
+
+.month-grid-body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.month-grid-row {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  flex: 1;
+  position: relative; /* For absolute positioning of campaign bars */
+}
+
+.month-day-cell {
+  border-right: 0.5px solid #2b2b23;
+  border-bottom: 0.5px solid #2b2b23;
+  padding: 6px;
+  background: #fcf7f1;
+  display: flex;
+  flex-direction: column;
+  min-height: 88px;
+  overflow: hidden; /* Prevent content from expanding cell width */
+}
+
+.month-day-cell:last-child {
+  border-right: none;
+}
+
+.month-grid-row:last-child .month-day-cell {
+  border-bottom: none;
+}
+
+.month-day-cell.other-month {
+  background: #f5f0eb;
+}
+
+.month-day-cell.other-month .month-day-number {
+  color: #9ca3af;
+}
+
+.month-day-number {
+  font-family: 'Bricolage Grotesque', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: #2b2b23;
+  margin-bottom: 4px;
+}
+
+.month-day-cell.today .month-day-number {
+  background: #115059;
+  color: #ffffff;
+  width: 26px;
+  height: 26px;
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 0.5px solid #2b2b23;
+}
+
+.month-activities {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  overflow: hidden;
+  flex: 1;
+  min-width: 0; /* Allow flex item to shrink below content size */
+}
+
+.month-activity-card {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px;
+  border-radius: 9999px;
+  border: 0.5px solid #2b2b23;
+  background: #f1e8d7;
+  font-size: 11px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: background 0.15s;
+  min-width: 0; /* Allow shrinking */
+  max-width: 100%; /* Don't exceed parent width */
+}
+
+.month-activity-card:hover {
+  background: #e8dfc9;
+}
+
+.month-funnel-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 0.5px solid #2b2b23;
+  flex-shrink: 0;
+}
+
+.month-funnel-dot.awareness {
+  background: #eece7b;
+}
+
+.month-funnel-dot.consideration {
+  background: #b7d9ff;
+}
+
+.month-funnel-dot.conversion {
+  background: #b1d1a0;
+}
+
+.month-funnel-dot.retention {
+  background: #b6bbfb;
+}
+
+.month-activity-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #2b2b23;
+  min-width: 0; /* Allow text to truncate properly */
+}
+
+/* ===== CAMPAIGN BARS ===== */
+.month-day-cell-content {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+
+/* Row-level campaign bar container */
+.row-campaign-bars {
+  position: absolute;
+  top: 32px; /* Below the day number */
+  left: 0;
+  right: 0;
+  height: 22px;
+  z-index: 3;
+  pointer-events: none;
+}
+
+.campaign-bar {
+  position: absolute;
+  top: 0;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 600;
+  color: #2b2b23;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  box-sizing: border-box;
+  pointer-events: auto;
+}
+
+/* Campaign bar rounded corners based on position */
+.campaign-bar.is-start {
+  border-top-left-radius: 9999px;
+  border-bottom-left-radius: 9999px;
+  padding-left: 10px;
+}
+
+.campaign-bar.is-end {
+  border-top-right-radius: 9999px;
+  border-bottom-right-radius: 9999px;
+  padding-right: 10px;
+}
+
+.campaign-bar.is-start.is-end {
+  border-radius: 9999px;
+  padding: 0 10px;
+}
+
+/* Campaign name - centered */
+.campaign-bar-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Spacer in cells to make room for campaign bars */
+.campaign-spacer {
+  height: 26px;
+  min-height: 26px;
+  flex-shrink: 0;
+}
+
+/* ===== WEEK VIEW CAMPAIGN BAR ===== */
+.week-campaign-row {
+  position: relative;
+  height: 30px;
+  background: #f1e8d7;
+  border-bottom: 0.5px solid #2b2b23;
+}
+
+.week-campaign-row .campaign-bar {
+  top: 4px;
+}
+
+/* ===== DAY VIEW CAMPAIGN BAR ===== */
+.day-campaigns {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.day-campaign-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 16px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #2b2b23;
+}
+
+.day-campaign-bar.is-start {
+  border-top-left-radius: 9999px;
+  border-bottom-left-radius: 9999px;
+}
+
+.day-campaign-bar.is-end {
+  border-top-right-radius: 9999px;
+  border-bottom-right-radius: 9999px;
+}
+
+.day-campaign-bar.is-start.is-end {
+  border-radius: 9999px;
+}
+
+/* ===== DAY VIEW ===== */
+.day-grid-container {
+  flex: 1;
+  overflow: auto;
+  background: #f1e8d7;
+  border-radius: 24px;
+  border: 0.5px solid #2b2b23;
+  display: flex;
+  flex-direction: column;
+}
+
+.day-grid-header {
+  display: grid;
+  grid-template-columns: 1fr;
+  background: #f1e8d7;
+  border-bottom: 0.5px solid #2b2b23;
+  position: sticky;
+  top: 0;
+  z-index: 5;
+}
+
+.day-view-header {
+  padding: 14px 6px 10px;
+  text-align: center;
+  background: transparent;
+}
+
+.day-grid-body {
+  display: grid;
+  grid-template-columns: 1fr;
+  flex: 1;
+  padding: 16px;
+}
+
+.day-view-column {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: #fcf7f1;
+  border-radius: 16px;
+  padding: 16px;
+  min-height: 400px;
+}
+
+/* Day View Activity Card - Larger with more detail */
+.day-activity-card {
+  background: #f1e8d7;
+  border-radius: 16px;
+  padding: 12px 16px;
+  box-shadow: none;
+  cursor: grab;
+  border: 0.5px solid #2b2b23;
+  font-size: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  transition: background 0.15s;
+}
+
+.day-activity-card:hover {
+  background: #e8dfc9;
+}
+
+.day-activity-card[data-stage="awareness"] {
+  border-color: #eece7b;
+}
+
+.day-activity-card[data-stage="consideration"] {
+  border-color: #b7d9ff;
+}
+
+.day-activity-card[data-stage="conversion"] {
+  border-color: #b1d1a0;
+}
+
+.day-activity-card[data-stage="retention"] {
+  border-color: #b6bbfb;
+}
+
+.day-activity-header-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.day-activity-title {
+  font-family: 'Bricolage Grotesque', sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  color: #2b2b23;
+  line-height: 1.3;
+  flex: 1;
+}
+
+.day-activity-meta-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #2b2b23;
+}
+
+.day-activity-meta-group iconify-icon {
+  font-size: 14px;
+  color: #5a5a52;
+}
+
+.day-activity-meta-group .separator {
+  color: #9ca3af;
+}
+
+.status-square {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  border: 0.5px solid #2b2b23;
+  flex-shrink: 0;
+}
+
+.status-square.status-idea {
+  background: #B3B3B0;
+}
+
+.status-square.status-draft {
+  background: #FBCB6E;
+}
+
+.status-square.status-ready {
+  background: #FBCB6E;
+}
+
+.status-square.status-scheduled {
+  background: #B1D1A0;
+}
+
+.status-square.status-running {
+  background: #B6BBFB;
+}
+
+.status-square.status-complete {
+  background: #6E213B;
+}
+
+/* ===== LIST VIEW (Kanban) ===== */
+.list-view-container {
+  flex: 1;
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  padding: 4px;
+  min-width: 0; /* Allow container to shrink */
+}
+
+.list-column {
+  flex: 1 1 0; /* Equal flex basis, allow shrinking */
+  min-width: 160px;
+  max-width: 240px;
+  background: #f1e8d7;
+  border-radius: 16px;
+  border: 0.5px solid #2b2b23;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.list-column-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border-bottom: 0.5px solid #2b2b23;
+}
+
+.list-column-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'Bricolage Grotesque', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: #2b2b23;
+}
+
+.list-column-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 0.5px solid #2b2b23;
+}
+
+.list-column-count {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #fcf7f1;
+  border: 1px solid #2b2b23;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: #2b2b23;
+}
+
+.list-column-body {
+  flex: 1;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow-y: auto;
+  background: #fcf7f1;
+}
+
+/* List view activity card - larger with more info */
+.list-activity-card {
+  background: #f1e8d7;
+  border-radius: 12px;
+  padding: 12px;
+  border: 0.5px solid #2b2b23;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.list-activity-card:hover {
+  background: #e8dfc9;
+  transform: translateY(-1px);
+}
+
+.list-activity-title {
+  font-family: 'Bricolage Grotesque', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: #2b2b23;
+  line-height: 1.3;
+}
+
+.list-activity-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #5a5a52;
+}
+
+.list-activity-meta iconify-icon {
+  font-size: 12px;
+}
+
+.list-activity-meta .separator {
+  color: #9ca3af;
+}
+
+.list-activity-funnel {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: #5a5a52;
+}
+
+.list-activity-funnel .funnel-dot {
+  width: 8px;
+  height: 8px;
+}
+
+/* Campaign card in list view */
+.list-campaign-card {
+  background: #fcf7f1;
+  border-radius: 12px;
+  padding: 12px;
+  border: 2px solid #2b2b23;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.list-campaign-card:hover {
+  transform: translateY(-1px);
+}
+
+.list-campaign-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.list-campaign-icon {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.list-campaign-icon iconify-icon {
+  font-size: 12px;
+  color: #2b2b23;
+}
+
+.list-campaign-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #5a5a52;
+}
+
+.list-campaign-title {
+  font-family: 'Bricolage Grotesque', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: #2b2b23;
+}
+
+.list-campaign-dates {
+  font-size: 11px;
+  color: #5a5a52;
+}
+
+/* ===== FUNNEL VIEW ===== */
+.funnel-view-container {
+  flex: 1;
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  padding: 4px;
+  min-width: 0;
+}
+
+.funnel-column {
+  flex: 1 1 0;
+  min-width: 180px;
+  max-width: 280px;
+  background: #f1e8d7;
+  border-radius: 16px;
+  border: 0.5px solid #2b2b23;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.funnel-column-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border-bottom: 3px solid;
+}
+
+.funnel-column-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'Bricolage Grotesque', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: #2b2b23;
+}
+
+.funnel-column-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 0.5px solid #2b2b23;
+}
+
+.funnel-column-count {
+  font-size: 12px;
+  color: #5a5a52;
+}
+
+.funnel-column-body {
+  flex: 1;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow-y: auto;
+  background: #fcf7f1;
+}
+
+.funnel-activity-card {
+  background: #f1e8d7;
+  border-radius: 12px;
+  padding: 12px;
+  border-left: 4px solid;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.funnel-activity-card:hover {
+  background: #e8dfc9;
+  transform: translateY(-1px);
+}
+
+.funnel-activity-title {
+  font-family: 'Bricolage Grotesque', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: #2b2b23;
+  line-height: 1.3;
+}
+
+.funnel-activity-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-size: 12px;
+  color: #5a5a52;
+}
+
+.funnel-activity-meta iconify-icon {
+  font-size: 12px;
+}
+
+.funnel-activity-meta .separator {
+  color: #9ca3af;
+}
+
+.funnel-empty-state {
+  text-align: center;
+  color: #9ca3af;
+  font-size: 13px;
+  padding: 24px 12px;
+}
+
+/* Status badges for funnel view */
+.status-badge {
+  padding: 2px 8px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 500;
+  border: 0.5px solid #2b2b23;
+}
+
+.status-badge.status-idea {
+  background: #e8e8e6;
+  color: #5a5a52;
+}
+
+.status-badge.status-draft,
+.status-badge.status-ready {
+  background: #fef3cd;
+  color: #856404;
+}
+
+.status-badge.status-scheduled {
+  background: #d4edda;
+  color: #155724;
+}
+
+.status-badge.status-running {
+  background: #E8E9FE;
+  color: #6366F1;
+}
+
+.status-badge.status-complete {
+  background: #6E213B;
+  color: #fcf7f1;
 }

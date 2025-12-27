@@ -1,20 +1,16 @@
 import { useState } from 'react';
 import { Card, Modal, Input, Button, Textarea } from '../components/ui';
-import type { QuarterlyInitiative, WeeklyGoal, WeeklyGoalCategory } from '../types';
+import type { QuarterlyInitiative, WeeklyGoal, WeeklyGoalCategory, CoreGoal, Offer, NonNegotiable, CoreGoalStatus, OfferType, OfferStatus } from '../types';
 
 type GoalTab = 'annual' | 'quarterly' | 'weekly';
 
-// Extended types with current values
-interface AnnualGoalData {
-  revenueTarget: number;
-  revenueCurrent: number;
-  linkedinTarget: number;
-  linkedinCurrent: number;
-  emailTarget: number;
-  emailCurrent: number;
-  launchesTarget: number;
-  launchesCurrent: number;
-  topPriority: string;
+// Annual Plan data structure
+interface AnnualPlanData {
+  marketingNorthStar: string;
+  coreGoals: CoreGoal[];
+  nonNegotiables: NonNegotiable[];
+  sayingNoTo: string[];
+  offers: Offer[];
 }
 
 interface QuarterlyGoalData {
@@ -30,16 +26,35 @@ interface QuarterlyGoalData {
 }
 
 // Initial data
-const initialAnnualGoal: AnnualGoalData = {
-  revenueTarget: 150000,
-  revenueCurrent: 8200,
-  linkedinTarget: 5000,
-  linkedinCurrent: 2847,
-  emailTarget: 2000,
-  emailCurrent: 412,
-  launchesTarget: 3,
-  launchesCurrent: 0,
-  topPriority: 'Build consistent visibility on LinkedIn to drive discovery calls for 1:1 coaching',
+const initialAnnualPlan: AnnualPlanData = {
+  marketingNorthStar: '',
+  coreGoals: [
+    { id: 'goal-1', title: '', what: '', whyItMatters: '', successLooksLike: '', status: 'not_started', order: 1 },
+    { id: 'goal-2', title: '', what: '', whyItMatters: '', successLooksLike: '', status: 'not_started', order: 2 },
+    { id: 'goal-3', title: '', what: '', whyItMatters: '', successLooksLike: '', status: 'not_started', order: 3 },
+  ],
+  nonNegotiables: [
+    { id: 'nn-1', text: 'No fear-based marketing', checked: false },
+    { id: 'nn-2', text: 'Content that sounds like me', checked: false },
+    { id: 'nn-3', text: 'One full day off per week', checked: false },
+    { id: 'nn-4', text: '', checked: false },
+    { id: 'nn-5', text: '', checked: false },
+    { id: 'nn-6', text: '', checked: false },
+    { id: 'nn-7', text: '', checked: false },
+  ],
+  sayingNoTo: [
+    'No daily posting pressure',
+    'No being on every platform',
+    'No chasing every trend',
+    '',
+    '',
+    '',
+  ],
+  offers: [
+    { id: 'offer-1', name: '[Example: 6-Week Course]', type: 'course', launchDate: 'March 2026', price: '$XXX', status: 'planning', order: 1 },
+    { id: 'offer-2', name: '[Example: Community]', type: 'membership', launchDate: 'April 2026', price: '$XX/mo', status: 'not_started', order: 2 },
+    { id: 'offer-3', name: '[Example: 1:1 Mentorship]', type: 'service', launchDate: 'Ongoing', price: '$XXX', status: 'active', order: 3 },
+  ],
 };
 
 const initialQuarterlyGoal: QuarterlyGoalData = {
@@ -89,23 +104,26 @@ export function Goals() {
   const [activeTab, setActiveTab] = useState<GoalTab>('annual');
 
   // Goals state
-  const [annualGoal, setAnnualGoal] = useState<AnnualGoalData>(initialAnnualGoal);
+  const [annualPlan, setAnnualPlan] = useState<AnnualPlanData>(initialAnnualPlan);
   const [quarterlyGoal, setQuarterlyGoal] = useState<QuarterlyGoalData>(initialQuarterlyGoal);
   const [weeklyGoals, setWeeklyGoals] = useState<WeeklyGoal[]>(initialWeeklyGoals);
 
   // Modal states
-  const [isAnnualModalOpen, setIsAnnualModalOpen] = useState(false);
   const [isQuarterlyModalOpen, setIsQuarterlyModalOpen] = useState(false);
   const [isWeeklyModalOpen, setIsWeeklyModalOpen] = useState(false);
   const [editingWeeklyGoal, setEditingWeeklyGoal] = useState<WeeklyGoal | null>(null);
 
-  // Individual edit modal states
-  const [editingAnnualField, setEditingAnnualField] = useState<'revenue' | 'linkedin' | 'email' | 'launches' | 'priority' | null>(null);
+  // Annual Plan modal states
+  const [editingCoreGoalIndex, setEditingCoreGoalIndex] = useState<number | null>(null);
+  const [editingOfferIndex, setEditingOfferIndex] = useState<number | null>(null);
+  const [isNorthStarModalOpen, setIsNorthStarModalOpen] = useState(false);
+
+  // Individual edit modal states for quarterly
   const [editingQuarterlyField, setEditingQuarterlyField] = useState<'theme' | 'metrics' | null>(null);
   const [editingInitiativeIndex, setEditingInitiativeIndex] = useState<number | null>(null);
 
   // Form states
-  const [annualForm, setAnnualForm] = useState<AnnualGoalData>(initialAnnualGoal);
+  const [annualPlanForm, setAnnualPlanForm] = useState<AnnualPlanData>(initialAnnualPlan);
   const [quarterlyForm, setQuarterlyForm] = useState<QuarterlyGoalData>(initialQuarterlyGoal);
   const [weeklyForm, setWeeklyForm] = useState({
     title: '',
@@ -114,26 +132,93 @@ export function Goals() {
     currentCount: 0,
   });
 
-  // Annual goal handlers
-  const handleOpenAnnualModal = () => {
-    setAnnualForm({ ...annualGoal });
-    setIsAnnualModalOpen(true);
+  // Annual Plan handlers
+  const handleOpenNorthStarModal = () => {
+    setAnnualPlanForm({ ...annualPlan });
+    setIsNorthStarModalOpen(true);
   };
 
-  const handleSaveAnnualGoal = () => {
-    setAnnualGoal({ ...annualForm });
-    setIsAnnualModalOpen(false);
+  const handleSaveNorthStar = () => {
+    setAnnualPlan({ ...annualPlanForm });
+    setIsNorthStarModalOpen(false);
   };
 
-  // Individual annual field handlers
-  const handleOpenAnnualField = (field: 'revenue' | 'linkedin' | 'email' | 'launches' | 'priority') => {
-    setAnnualForm({ ...annualGoal });
-    setEditingAnnualField(field);
+  const handleOpenCoreGoal = (index: number) => {
+    setAnnualPlanForm({ ...annualPlan, coreGoals: annualPlan.coreGoals.map(g => ({ ...g })) });
+    setEditingCoreGoalIndex(index);
   };
 
-  const handleSaveAnnualField = () => {
-    setAnnualGoal({ ...annualForm });
-    setEditingAnnualField(null);
+  const handleSaveCoreGoal = () => {
+    setAnnualPlan({ ...annualPlanForm });
+    setEditingCoreGoalIndex(null);
+  };
+
+  const handleUpdateCoreGoal = (index: number, field: keyof CoreGoal, value: string | CoreGoalStatus) => {
+    const newGoals = [...annualPlanForm.coreGoals];
+    newGoals[index] = { ...newGoals[index], [field]: value };
+    setAnnualPlanForm(prev => ({ ...prev, coreGoals: newGoals }));
+  };
+
+  const handleOpenOffer = (index: number) => {
+    setAnnualPlanForm({ ...annualPlan, offers: annualPlan.offers.map(o => ({ ...o })) });
+    setEditingOfferIndex(index);
+  };
+
+  const handleSaveOffer = () => {
+    setAnnualPlan({ ...annualPlanForm });
+    setEditingOfferIndex(null);
+  };
+
+  const handleUpdateOffer = (index: number, field: keyof Offer, value: string | OfferType | OfferStatus | number) => {
+    const newOffers = [...annualPlanForm.offers];
+    newOffers[index] = { ...newOffers[index], [field]: value };
+    setAnnualPlanForm(prev => ({ ...prev, offers: newOffers }));
+  };
+
+  const handleAddOffer = () => {
+    const newOffer: Offer = {
+      id: `offer-${Date.now()}`,
+      name: '',
+      type: 'course',
+      launchDate: '',
+      price: '',
+      status: 'planning',
+      order: annualPlan.offers.length + 1,
+    };
+    setAnnualPlan(prev => ({ ...prev, offers: [...prev.offers, newOffer] }));
+  };
+
+  const handleDeleteOffer = (index: number) => {
+    setAnnualPlan(prev => ({
+      ...prev,
+      offers: prev.offers.filter((_, i) => i !== index),
+    }));
+    setEditingOfferIndex(null);
+  };
+
+  const handleToggleNonNegotiable = (index: number) => {
+    setAnnualPlan(prev => ({
+      ...prev,
+      nonNegotiables: prev.nonNegotiables.map((item, i) =>
+        i === index ? { ...item, checked: !item.checked } : item
+      ),
+    }));
+  };
+
+  const handleUpdateNonNegotiable = (index: number, text: string) => {
+    setAnnualPlan(prev => ({
+      ...prev,
+      nonNegotiables: prev.nonNegotiables.map((item, i) =>
+        i === index ? { ...item, text } : item
+      ),
+    }));
+  };
+
+  const handleUpdateSayingNoTo = (index: number, text: string) => {
+    setAnnualPlan(prev => ({
+      ...prev,
+      sayingNoTo: prev.sayingNoTo.map((item, i) => (i === index ? text : item)),
+    }));
   };
 
   // Quarterly goal handlers
@@ -303,9 +388,7 @@ export function Goals() {
             What you are working toward.
           </p>
         </div>
-        {activeTab === 'annual' && (
-          <Button variant="secondary" onClick={handleOpenAnnualModal}>Edit Goals</Button>
-        )}
+        {/* No button for annual - inline editing */}
         {activeTab === 'quarterly' && (
           <Button variant="secondary" onClick={handleOpenQuarterlyModal}>Edit Quarter</Button>
         )}
@@ -336,155 +419,192 @@ export function Goals() {
         </button>
       </div>
 
-      {/* Annual Goals View */}
+      {/* Annual Goals View - Strategic Planning */}
       {activeTab === 'annual' && (
-        <div className="space-y-6">
+        <div className="space-y-8">
+          {/* Marketing North Star */}
+          <Card className="cursor-pointer hover:shadow-md transition-all" onClick={handleOpenNorthStarModal}>
+            <h2 className="text-xl font-headline font-bold text-text-primary mb-4">Your Marketing North Star</h2>
+            <div className="p-4 bg-warning-light rounded-lg mb-4">
+              <p className="text-text-primary font-medium">Guiding Question:</p>
+              <p className="text-text-secondary">What do you want people to FEEL when they encounter your brand this year?</p>
+            </div>
+            <div className="p-4 bg-warning-light rounded-lg mb-4">
+              <p className="text-sm text-text-secondary">
+                <span className="font-medium">Tip:</span> Write it in one sentence. This becomes your emotional compass for every decision.
+              </p>
+            </div>
+            <p className="text-sm text-text-secondary italic mb-4">
+              <span className="font-medium">Example:</span> "I want people to feel understood, grounded, and capable — like marketing finally makes sense."
+            </p>
+            <div className="mt-4">
+              <p className="text-sm font-medium text-text-primary mb-2">Your Answer:</p>
+              <p className="text-text-primary">
+                {annualPlan.marketingNorthStar || <span className="text-text-muted">[Write your north star here]</span>}
+              </p>
+            </div>
+          </Card>
+
+          {/* 3 Core Goals */}
+          <div>
+            <h2 className="text-xl font-headline font-bold text-text-primary mb-4">Your 3 Core Goals for 2026</h2>
+            <div className="grid md:grid-cols-3 gap-4">
+              {annualPlan.coreGoals.map((goal, index) => (
+                <Card
+                  key={goal.id}
+                  className="cursor-pointer hover:shadow-md transition-all"
+                  onClick={() => handleOpenCoreGoal(index)}
+                >
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className={`w-6 h-6 rounded-full flex items-center justify-center text-sm font-bold text-white ${
+                      index === 0 ? 'bg-success' : index === 1 ? 'bg-warning' : 'bg-[#9B8FD7]'
+                    }`}>
+                      {index + 1}
+                    </span>
+                    <span className="font-headline font-semibold text-text-primary">Goal {index + 1}:</span>
+                    <span className="text-text-primary">{goal.title || '[Title]'}</span>
+                  </div>
+                  <div className="space-y-2 text-sm">
+                    <div>
+                      <span className="font-medium text-text-primary">What:</span>{' '}
+                      <span className="text-text-secondary">{goal.what || '[Description]'}</span>
+                    </div>
+                    <div>
+                      <span className="font-medium text-text-primary">Why it matters:</span>{' '}
+                      <span className="text-text-secondary">{goal.whyItMatters || '[Emotional reason]'}</span>
+                    </div>
+                    <div>
+                      <span className="font-medium text-text-primary">Success looks like:</span>{' '}
+                      <span className="text-text-secondary">{goal.successLooksLike || '[Specific outcome]'}</span>
+                    </div>
+                    <div className="flex items-center gap-2 pt-2">
+                      <span className="font-medium text-text-primary">Status:</span>
+                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium ${
+                        goal.status === 'complete' ? 'bg-success-light text-success' :
+                        goal.status === 'in_progress' ? 'bg-warning-light text-warning' :
+                        'bg-gray-100 text-text-muted'
+                      }`}>
+                        {goal.status === 'complete' && '✓ '}
+                        {goal.status === 'not_started' ? 'Not started' :
+                         goal.status === 'in_progress' ? 'In progress' : 'Complete'}
+                      </span>
+                    </div>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          </div>
+
+          {/* Non-Negotiables + Saying NO To */}
           <div className="grid md:grid-cols-2 gap-6">
-            {/* Revenue Goal */}
-            <Card className="cursor-pointer hover:shadow-md transition-all" onClick={() => handleOpenAnnualField('revenue')}>
-              <div className="flex items-center gap-2 mb-4">
-                <span className="text-2xl">💰</span>
-                <h2 className="text-lg font-headline font-semibold text-text-primary">REVENUE</h2>
+            {/* Non-Negotiables */}
+            <Card>
+              <h2 className="text-xl font-headline font-bold text-text-primary mb-4">Your Non-Negotiables</h2>
+              <div className="p-3 bg-dusty-pink-light rounded-lg mb-4">
+                <p className="text-sm text-text-primary italic">
+                  <span className="font-medium">What you WON'T compromise — no matter what</span>
+                </p>
               </div>
               <div className="space-y-2">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-text-secondary">Target:</span>
-                  <span className="font-semibold text-text-primary">{formatCurrency(annualGoal.revenueTarget)}</span>
-                </div>
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-text-secondary">Current:</span>
-                  <span className="font-semibold text-text-primary">{formatCurrency(annualGoal.revenueCurrent)}</span>
-                </div>
-                <div className="progress-bar">
-                  <div className="progress-fill" style={{ width: `${getProgressPercentage(annualGoal.revenueCurrent, annualGoal.revenueTarget)}%` }} />
-                </div>
-                <div className="text-sm text-text-muted">
-                  {getProgressPercentage(annualGoal.revenueCurrent, annualGoal.revenueTarget)}% of target
-                </div>
+                {annualPlan.nonNegotiables.map((item, index) => (
+                  <div key={item.id} className="flex items-center gap-2">
+                    <button
+                      onClick={() => handleToggleNonNegotiable(index)}
+                      className={`w-5 h-5 rounded border flex items-center justify-center ${
+                        item.checked ? 'bg-success border-success text-white' : 'border-border hover:border-text-muted'
+                      }`}
+                    >
+                      {item.checked && '✓'}
+                    </button>
+                    <input
+                      type="text"
+                      value={item.text}
+                      onChange={(e) => handleUpdateNonNegotiable(index, e.target.value)}
+                      placeholder={index < 3 ? `Example: ${['No fear-based marketing', 'Content that sounds like me', 'One full day off per week'][index]}` : '[Add your own]'}
+                      className="flex-1 bg-transparent border-none outline-none text-text-primary placeholder:text-text-muted text-sm"
+                    />
+                  </div>
+                ))}
               </div>
             </Card>
 
-            {/* LinkedIn Goal */}
-            <Card className="cursor-pointer hover:shadow-md transition-all" onClick={() => handleOpenAnnualField('linkedin')}>
-              <div className="flex items-center gap-2 mb-4">
-                <span className="text-2xl">📈</span>
-                <h2 className="text-lg font-headline font-semibold text-text-primary">LINKEDIN</h2>
+            {/* Saying NO To */}
+            <Card>
+              <h2 className="text-xl font-headline font-bold text-text-primary mb-4">What You're Saying NO To</h2>
+              <div className="p-3 bg-warning-light rounded-lg mb-4">
+                <p className="text-sm text-text-secondary">
+                  <span className="font-medium">Why this matters:</span> This is just as important as what you're saying yes to. Clarity requires boundaries.
+                </p>
               </div>
-              <div className="space-y-2">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-text-secondary">Target:</span>
-                  <span className="font-semibold text-text-primary">{formatNumber(annualGoal.linkedinTarget)} followers</span>
-                </div>
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-text-secondary">Current:</span>
-                  <span className="font-semibold text-text-primary">{formatNumber(annualGoal.linkedinCurrent)}</span>
-                </div>
-                <div className="progress-bar">
-                  <div className="progress-fill" style={{ width: `${getProgressPercentage(annualGoal.linkedinCurrent, annualGoal.linkedinTarget)}%` }} />
-                </div>
-                <div className="text-sm text-text-muted">
-                  {getProgressPercentage(annualGoal.linkedinCurrent, annualGoal.linkedinTarget)}% of target
-                </div>
-              </div>
-            </Card>
-
-            {/* Email Goal */}
-            <Card className="cursor-pointer hover:shadow-md transition-all" onClick={() => handleOpenAnnualField('email')}>
-              <div className="flex items-center gap-2 mb-4">
-                <span className="text-2xl">📧</span>
-                <h2 className="text-lg font-headline font-semibold text-text-primary">EMAIL LIST</h2>
-              </div>
-              <div className="space-y-2">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-text-secondary">Target:</span>
-                  <span className="font-semibold text-text-primary">{formatNumber(annualGoal.emailTarget)} subscribers</span>
-                </div>
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-text-secondary">Current:</span>
-                  <span className="font-semibold text-text-primary">{formatNumber(annualGoal.emailCurrent)}</span>
-                </div>
-                <div className="progress-bar">
-                  <div className="progress-fill" style={{ width: `${getProgressPercentage(annualGoal.emailCurrent, annualGoal.emailTarget)}%` }} />
-                </div>
-                <div className="text-sm text-text-muted">
-                  {getProgressPercentage(annualGoal.emailCurrent, annualGoal.emailTarget)}% of target
-                </div>
-              </div>
-            </Card>
-
-            {/* Launches Goal */}
-            <Card className="cursor-pointer hover:shadow-md transition-all" onClick={() => handleOpenAnnualField('launches')}>
-              <div className="flex items-center gap-2 mb-4">
-                <span className="text-2xl">🚀</span>
-                <h2 className="text-lg font-headline font-semibold text-text-primary">LAUNCHES</h2>
-              </div>
-              <div className="space-y-2">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-text-secondary">Target:</span>
-                  <span className="font-semibold text-text-primary">{annualGoal.launchesTarget} offers</span>
-                </div>
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-text-secondary">Current:</span>
-                  <span className="font-semibold text-text-primary">{annualGoal.launchesCurrent}</span>
-                </div>
-                <div className="progress-bar">
-                  <div className="progress-fill" style={{ width: `${getProgressPercentage(annualGoal.launchesCurrent, annualGoal.launchesTarget)}%` }} />
-                </div>
-                <div className="text-sm text-text-muted">
-                  {getProgressPercentage(annualGoal.launchesCurrent, annualGoal.launchesTarget)}% of target
-                </div>
-              </div>
+              <ul className="space-y-2">
+                {annualPlan.sayingNoTo.map((item, index) => (
+                  <li key={index} className="flex items-center gap-2">
+                    <span className="text-text-muted">•</span>
+                    <input
+                      type="text"
+                      value={item}
+                      onChange={(e) => handleUpdateSayingNoTo(index, e.target.value)}
+                      placeholder={index < 3 ? `Example: ${['No daily posting pressure', 'No being on every platform', 'No chasing every trend'][index]}` : '[Add your own]'}
+                      className="flex-1 bg-transparent border-none outline-none text-text-primary placeholder:text-text-muted text-sm"
+                    />
+                  </li>
+                ))}
+              </ul>
             </Card>
           </div>
 
-          {/* #1 Priority */}
-          <Card className="cursor-pointer hover:shadow-md transition-all" onClick={() => handleOpenAnnualField('priority')}>
-            <div className="flex items-center gap-2 mb-4">
-              <span className="text-2xl">🎯</span>
-              <h2 className="text-lg font-headline font-semibold text-text-primary">#1 PRIORITY THIS YEAR</h2>
-            </div>
-            <p className="text-text-primary text-lg">"{annualGoal.topPriority}"</p>
-          </Card>
-
-          {/* Quarterly Overview */}
+          {/* Offers/Products Table */}
           <Card>
-            <div className="flex items-center gap-2 mb-4">
-              <span className="text-2xl">📅</span>
-              <h2 className="text-lg font-headline font-semibold text-text-primary">QUARTERLY OVERVIEW</h2>
-            </div>
-            <div className="grid grid-cols-4 gap-4">
-              <div className="p-4 rounded-lg border-2 border-dusty-pink bg-dusty-pink-light">
-                <div className="font-headline font-semibold text-sm mb-2">Q1: {quarterlyGoal.theme}</div>
-                <div className="text-xs text-text-secondary mb-2">Build audience</div>
-                <div className="progress-bar mb-2">
-                  <div className="progress-fill" style={{ width: '75%' }} />
-                </div>
-                <div className="text-xs text-dusty-pink font-medium">In progress</div>
-              </div>
-              <div className="p-4 rounded-lg border border-border bg-white">
-                <div className="font-headline font-semibold text-sm mb-2">Q2: Launch</div>
-                <div className="text-xs text-text-secondary mb-2">Course launch</div>
-                <div className="progress-bar mb-2">
-                  <div className="progress-fill" style={{ width: '0%' }} />
-                </div>
-                <div className="text-xs text-text-muted">Upcoming</div>
-              </div>
-              <div className="p-4 rounded-lg border border-border bg-white">
-                <div className="font-headline font-semibold text-sm mb-2">Q3: Scale</div>
-                <div className="text-xs text-text-secondary mb-2">Ads + growth</div>
-                <div className="progress-bar mb-2">
-                  <div className="progress-fill" style={{ width: '0%' }} />
-                </div>
-                <div className="text-xs text-text-muted">Upcoming</div>
-              </div>
-              <div className="p-4 rounded-lg border border-border bg-white">
-                <div className="font-headline font-semibold text-sm mb-2">Q4: Optimize</div>
-                <div className="text-xs text-text-secondary mb-2">Review</div>
-                <div className="progress-bar mb-2">
-                  <div className="progress-fill" style={{ width: '0%' }} />
-                </div>
-                <div className="text-xs text-text-muted">Upcoming</div>
-              </div>
+            <h2 className="text-xl font-headline font-bold text-text-primary mb-4">Your Offers/Products This Year</h2>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-border">
+                    <th className="text-left py-3 px-4 font-medium text-text-primary">Offer Name</th>
+                    <th className="text-left py-3 px-4 font-medium text-text-primary">Type</th>
+                    <th className="text-left py-3 px-4 font-medium text-text-primary">Launch Date</th>
+                    <th className="text-left py-3 px-4 font-medium text-text-primary">Price</th>
+                    <th className="text-left py-3 px-4 font-medium text-text-primary">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {annualPlan.offers.map((offer, index) => (
+                    <tr
+                      key={offer.id}
+                      className="border-b border-border hover:bg-cream cursor-pointer"
+                      onClick={() => handleOpenOffer(index)}
+                    >
+                      <td className="py-3 px-4 text-text-primary">{offer.name || '[Offer name]'}</td>
+                      <td className="py-3 px-4 text-text-secondary capitalize">{offer.type}</td>
+                      <td className="py-3 px-4 text-text-secondary">{offer.launchDate || '—'}</td>
+                      <td className="py-3 px-4 text-text-secondary">{offer.price || '—'}</td>
+                      <td className="py-3 px-4">
+                        <span className={`inline-flex items-center gap-1.5 px-2 py-1 rounded text-xs font-medium ${
+                          offer.status === 'active' ? 'bg-success-light text-success' :
+                          offer.status === 'planning' ? 'bg-warning-light text-warning' :
+                          'bg-gray-100 text-text-muted'
+                        }`}>
+                          {offer.status === 'active' && <span className="text-success">✓</span>}
+                          {offer.status === 'planning' && <span className="w-2 h-2 rounded-full bg-warning" />}
+                          {offer.status === 'not_started' && <span className="w-2 h-2 rounded bg-gray-400" />}
+                          {offer.status === 'planning' ? 'Planning' :
+                           offer.status === 'active' ? 'Active' : 'Not started'}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                  <tr>
+                    <td colSpan={5} className="py-3 px-4">
+                      <button
+                        onClick={handleAddOffer}
+                        className="text-text-muted hover:text-burgundy text-sm"
+                      >
+                        [Add row]
+                      </button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
           </Card>
         </div>
@@ -647,107 +767,162 @@ export function Goals() {
         </div>
       )}
 
-      {/* Annual Goals Edit Modal */}
-      <Modal isOpen={isAnnualModalOpen} onClose={() => setIsAnnualModalOpen(false)} title="Edit Annual Goals" size="lg">
-        <div className="space-y-6">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-text-primary mb-1">Revenue Target ($)</label>
-              <input
-                type="number"
-                className="input w-full"
-                value={annualForm.revenueTarget}
-                onChange={(e) => setAnnualForm(prev => ({ ...prev, revenueTarget: Number(e.target.value) || 0 }))}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-text-primary mb-1">Revenue Current ($)</label>
-              <input
-                type="number"
-                className="input w-full"
-                value={annualForm.revenueCurrent}
-                onChange={(e) => setAnnualForm(prev => ({ ...prev, revenueCurrent: Number(e.target.value) || 0 }))}
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-text-primary mb-1">LinkedIn Target (followers)</label>
-              <input
-                type="number"
-                className="input w-full"
-                value={annualForm.linkedinTarget}
-                onChange={(e) => setAnnualForm(prev => ({ ...prev, linkedinTarget: Number(e.target.value) || 0 }))}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-text-primary mb-1">LinkedIn Current</label>
-              <input
-                type="number"
-                className="input w-full"
-                value={annualForm.linkedinCurrent}
-                onChange={(e) => setAnnualForm(prev => ({ ...prev, linkedinCurrent: Number(e.target.value) || 0 }))}
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-text-primary mb-1">Email List Target</label>
-              <input
-                type="number"
-                className="input w-full"
-                value={annualForm.emailTarget}
-                onChange={(e) => setAnnualForm(prev => ({ ...prev, emailTarget: Number(e.target.value) || 0 }))}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-text-primary mb-1">Email List Current</label>
-              <input
-                type="number"
-                className="input w-full"
-                value={annualForm.emailCurrent}
-                onChange={(e) => setAnnualForm(prev => ({ ...prev, emailCurrent: Number(e.target.value) || 0 }))}
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-text-primary mb-1">Launches Target</label>
-              <input
-                type="number"
-                className="input w-full"
-                value={annualForm.launchesTarget}
-                onChange={(e) => setAnnualForm(prev => ({ ...prev, launchesTarget: Number(e.target.value) || 0 }))}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-text-primary mb-1">Launches Current</label>
-              <input
-                type="number"
-                className="input w-full"
-                value={annualForm.launchesCurrent}
-                onChange={(e) => setAnnualForm(prev => ({ ...prev, launchesCurrent: Number(e.target.value) || 0 }))}
-              />
-            </div>
-          </div>
-
+      {/* North Star Edit Modal */}
+      <Modal isOpen={isNorthStarModalOpen} onClose={() => setIsNorthStarModalOpen(false)} title="Edit Your Marketing North Star">
+        <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-text-primary mb-1">#1 Priority This Year</label>
+            <label className="block text-sm font-medium text-text-primary mb-1">Your Marketing North Star</label>
+            <p className="text-sm text-text-secondary mb-2">What do you want people to FEEL when they encounter your brand this year?</p>
             <Textarea
-              value={annualForm.topPriority}
-              onChange={(e) => setAnnualForm(prev => ({ ...prev, topPriority: e.target.value }))}
-              rows={2}
+              value={annualPlanForm.marketingNorthStar}
+              onChange={(e) => setAnnualPlanForm(prev => ({ ...prev, marketingNorthStar: e.target.value }))}
+              placeholder="I want people to feel..."
+              rows={3}
             />
           </div>
-
           <div className="flex gap-3 justify-end pt-4">
-            <Button variant="secondary" onClick={() => setIsAnnualModalOpen(false)}>Cancel</Button>
-            <Button onClick={handleSaveAnnualGoal}>Save Changes</Button>
+            <Button variant="secondary" onClick={() => setIsNorthStarModalOpen(false)}>Cancel</Button>
+            <Button onClick={handleSaveNorthStar}>Save</Button>
           </div>
         </div>
+      </Modal>
+
+      {/* Core Goal Edit Modal */}
+      <Modal
+        isOpen={editingCoreGoalIndex !== null}
+        onClose={() => setEditingCoreGoalIndex(null)}
+        title={`Edit Goal ${editingCoreGoalIndex !== null ? editingCoreGoalIndex + 1 : ''}`}
+      >
+        {editingCoreGoalIndex !== null && annualPlanForm.coreGoals[editingCoreGoalIndex] && (
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-text-primary mb-1">Goal Title</label>
+              <Input
+                value={annualPlanForm.coreGoals[editingCoreGoalIndex].title}
+                onChange={(e) => handleUpdateCoreGoal(editingCoreGoalIndex, 'title', e.target.value)}
+                placeholder="e.g., Build My Audience"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-text-primary mb-1">What (Description)</label>
+              <Textarea
+                value={annualPlanForm.coreGoals[editingCoreGoalIndex].what}
+                onChange={(e) => handleUpdateCoreGoal(editingCoreGoalIndex, 'what', e.target.value)}
+                placeholder="Describe what this goal involves..."
+                rows={2}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-text-primary mb-1">Why It Matters</label>
+              <Textarea
+                value={annualPlanForm.coreGoals[editingCoreGoalIndex].whyItMatters}
+                onChange={(e) => handleUpdateCoreGoal(editingCoreGoalIndex, 'whyItMatters', e.target.value)}
+                placeholder="The emotional reason this matters to you..."
+                rows={2}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-text-primary mb-1">Success Looks Like</label>
+              <Textarea
+                value={annualPlanForm.coreGoals[editingCoreGoalIndex].successLooksLike}
+                onChange={(e) => handleUpdateCoreGoal(editingCoreGoalIndex, 'successLooksLike', e.target.value)}
+                placeholder="A specific, measurable outcome..."
+                rows={2}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-text-primary mb-1">Status</label>
+              <select
+                value={annualPlanForm.coreGoals[editingCoreGoalIndex].status}
+                onChange={(e) => handleUpdateCoreGoal(editingCoreGoalIndex, 'status', e.target.value as CoreGoalStatus)}
+                className="w-full px-4 py-3 rounded-lg border border-border bg-white text-text-primary focus:outline-none focus:ring-2 focus:ring-burgundy focus:border-transparent"
+              >
+                <option value="not_started">Not started</option>
+                <option value="in_progress">In progress</option>
+                <option value="complete">Complete</option>
+              </select>
+            </div>
+            <div className="flex gap-3 justify-end pt-4">
+              <Button variant="secondary" onClick={() => setEditingCoreGoalIndex(null)}>Cancel</Button>
+              <Button onClick={handleSaveCoreGoal}>Save</Button>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      {/* Offer Edit Modal */}
+      <Modal
+        isOpen={editingOfferIndex !== null}
+        onClose={() => setEditingOfferIndex(null)}
+        title="Edit Offer"
+      >
+        {editingOfferIndex !== null && annualPlanForm.offers[editingOfferIndex] && (
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-text-primary mb-1">Offer Name</label>
+              <Input
+                value={annualPlanForm.offers[editingOfferIndex].name}
+                onChange={(e) => handleUpdateOffer(editingOfferIndex, 'name', e.target.value)}
+                placeholder="e.g., 6-Week Course"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-text-primary mb-1">Type</label>
+              <select
+                value={annualPlanForm.offers[editingOfferIndex].type}
+                onChange={(e) => handleUpdateOffer(editingOfferIndex, 'type', e.target.value as OfferType)}
+                className="w-full px-4 py-3 rounded-lg border border-border bg-white text-text-primary focus:outline-none focus:ring-2 focus:ring-burgundy focus:border-transparent"
+              >
+                <option value="course">Course</option>
+                <option value="membership">Membership</option>
+                <option value="service">Service</option>
+                <option value="product">Product</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-text-primary mb-1">Launch Date</label>
+              <Input
+                value={annualPlanForm.offers[editingOfferIndex].launchDate}
+                onChange={(e) => handleUpdateOffer(editingOfferIndex, 'launchDate', e.target.value)}
+                placeholder="e.g., March 2026 or Ongoing"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-text-primary mb-1">Price</label>
+              <Input
+                value={annualPlanForm.offers[editingOfferIndex].price}
+                onChange={(e) => handleUpdateOffer(editingOfferIndex, 'price', e.target.value)}
+                placeholder="e.g., $497 or $47/mo"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-text-primary mb-1">Status</label>
+              <select
+                value={annualPlanForm.offers[editingOfferIndex].status}
+                onChange={(e) => handleUpdateOffer(editingOfferIndex, 'status', e.target.value as OfferStatus)}
+                className="w-full px-4 py-3 rounded-lg border border-border bg-white text-text-primary focus:outline-none focus:ring-2 focus:ring-burgundy focus:border-transparent"
+              >
+                <option value="planning">Planning</option>
+                <option value="not_started">Not started</option>
+                <option value="active">Active</option>
+              </select>
+            </div>
+            <div className="flex gap-3 justify-between pt-4">
+              <Button
+                variant="secondary"
+                onClick={() => handleDeleteOffer(editingOfferIndex)}
+                className="text-error hover:bg-error/10"
+              >
+                Delete
+              </Button>
+              <div className="flex gap-3">
+                <Button variant="secondary" onClick={() => setEditingOfferIndex(null)}>Cancel</Button>
+                <Button onClick={handleSaveOffer}>Save</Button>
+              </div>
+            </div>
+          </div>
+        )}
       </Modal>
 
       {/* Quarterly Goals Edit Modal */}
@@ -945,144 +1120,6 @@ export function Goals() {
         </div>
       </Modal>
 
-      {/* Individual Annual Field Modals */}
-      {/* Revenue Modal */}
-      <Modal isOpen={editingAnnualField === 'revenue'} onClose={() => setEditingAnnualField(null)} title="Edit Revenue Goal">
-        <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-text-primary mb-1">Target ($)</label>
-              <input
-                type="number"
-                className="input w-full"
-                value={annualForm.revenueTarget}
-                onChange={(e) => setAnnualForm(prev => ({ ...prev, revenueTarget: Number(e.target.value) || 0 }))}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-text-primary mb-1">Current ($)</label>
-              <input
-                type="number"
-                className="input w-full"
-                value={annualForm.revenueCurrent}
-                onChange={(e) => setAnnualForm(prev => ({ ...prev, revenueCurrent: Number(e.target.value) || 0 }))}
-              />
-            </div>
-          </div>
-          <div className="flex gap-3 justify-end pt-4">
-            <Button variant="secondary" onClick={() => setEditingAnnualField(null)}>Cancel</Button>
-            <Button onClick={handleSaveAnnualField}>Save</Button>
-          </div>
-        </div>
-      </Modal>
-
-      {/* LinkedIn Modal */}
-      <Modal isOpen={editingAnnualField === 'linkedin'} onClose={() => setEditingAnnualField(null)} title="Edit LinkedIn Goal">
-        <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-text-primary mb-1">Target (followers)</label>
-              <input
-                type="number"
-                className="input w-full"
-                value={annualForm.linkedinTarget}
-                onChange={(e) => setAnnualForm(prev => ({ ...prev, linkedinTarget: Number(e.target.value) || 0 }))}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-text-primary mb-1">Current</label>
-              <input
-                type="number"
-                className="input w-full"
-                value={annualForm.linkedinCurrent}
-                onChange={(e) => setAnnualForm(prev => ({ ...prev, linkedinCurrent: Number(e.target.value) || 0 }))}
-              />
-            </div>
-          </div>
-          <div className="flex gap-3 justify-end pt-4">
-            <Button variant="secondary" onClick={() => setEditingAnnualField(null)}>Cancel</Button>
-            <Button onClick={handleSaveAnnualField}>Save</Button>
-          </div>
-        </div>
-      </Modal>
-
-      {/* Email Modal */}
-      <Modal isOpen={editingAnnualField === 'email'} onClose={() => setEditingAnnualField(null)} title="Edit Email List Goal">
-        <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-text-primary mb-1">Target (subscribers)</label>
-              <input
-                type="number"
-                className="input w-full"
-                value={annualForm.emailTarget}
-                onChange={(e) => setAnnualForm(prev => ({ ...prev, emailTarget: Number(e.target.value) || 0 }))}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-text-primary mb-1">Current</label>
-              <input
-                type="number"
-                className="input w-full"
-                value={annualForm.emailCurrent}
-                onChange={(e) => setAnnualForm(prev => ({ ...prev, emailCurrent: Number(e.target.value) || 0 }))}
-              />
-            </div>
-          </div>
-          <div className="flex gap-3 justify-end pt-4">
-            <Button variant="secondary" onClick={() => setEditingAnnualField(null)}>Cancel</Button>
-            <Button onClick={handleSaveAnnualField}>Save</Button>
-          </div>
-        </div>
-      </Modal>
-
-      {/* Launches Modal */}
-      <Modal isOpen={editingAnnualField === 'launches'} onClose={() => setEditingAnnualField(null)} title="Edit Launches Goal">
-        <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-text-primary mb-1">Target (offers)</label>
-              <input
-                type="number"
-                className="input w-full"
-                value={annualForm.launchesTarget}
-                onChange={(e) => setAnnualForm(prev => ({ ...prev, launchesTarget: Number(e.target.value) || 0 }))}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-text-primary mb-1">Current</label>
-              <input
-                type="number"
-                className="input w-full"
-                value={annualForm.launchesCurrent}
-                onChange={(e) => setAnnualForm(prev => ({ ...prev, launchesCurrent: Number(e.target.value) || 0 }))}
-              />
-            </div>
-          </div>
-          <div className="flex gap-3 justify-end pt-4">
-            <Button variant="secondary" onClick={() => setEditingAnnualField(null)}>Cancel</Button>
-            <Button onClick={handleSaveAnnualField}>Save</Button>
-          </div>
-        </div>
-      </Modal>
-
-      {/* Priority Modal */}
-      <Modal isOpen={editingAnnualField === 'priority'} onClose={() => setEditingAnnualField(null)} title="Edit #1 Priority">
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-text-primary mb-1">Your #1 priority this year</label>
-            <Textarea
-              value={annualForm.topPriority}
-              onChange={(e) => setAnnualForm(prev => ({ ...prev, topPriority: e.target.value }))}
-              rows={3}
-            />
-          </div>
-          <div className="flex gap-3 justify-end pt-4">
-            <Button variant="secondary" onClick={() => setEditingAnnualField(null)}>Cancel</Button>
-            <Button onClick={handleSaveAnnualField}>Save</Button>
-          </div>
-        </div>
-      </Modal>
 
       {/* Individual Quarterly Field Modals */}
       {/* Theme Modal */}

@@ -1,4 +1,4 @@
-import type { Activity, User, WeeklyGoal } from '../types';
+import type { Activity, User, WeeklyGoal, Campaign } from '../types';
 
 // Mock User
 export const mockUser: User = {
@@ -118,6 +118,26 @@ export const mockActivities: Activity[] = [
     platform: 'linkedin',
     contentPillar: 'Education',
     status: 'idea',
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  },
+];
+
+// Helper to get a specific date in the current month
+const getDateInCurrentMonth = (day: number): Date => {
+  const today = new Date();
+  return new Date(today.getFullYear(), today.getMonth(), day);
+};
+
+// Mock Campaigns
+export const mockCampaigns: Campaign[] = [
+  {
+    id: 'campaign-1',
+    userId: 'user-1',
+    name: 'December Glow Campaign',
+    startDate: getDateInCurrentMonth(5),
+    endDate: getDateInCurrentMonth(29),
+    color: '#FBCB6E', // Gold/yellow
     createdAt: new Date(),
     updatedAt: new Date(),
   },
