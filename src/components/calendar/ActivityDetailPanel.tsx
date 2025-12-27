@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
-import type { Activity, FunnelStage, Platform, ActivityStatus } from '../../types';
-import { FUNNEL_STAGES, PLATFORM_INFO } from '../../types';
+import type { Activity, FunnelStage, Platform, ActivityStatus, ActivityType } from '../../types';
+import { FUNNEL_STAGES, CHANNEL_INFO, ACTIVITY_TYPE_INFO, STATUS_INFO } from '../../types';
+
 
 interface ActivityDetailPanelProps {
   activity: Activity | null;
@@ -53,6 +54,10 @@ export function ActivityDetailPanel({
     }
   };
 
+  const handleOpenFullEditor = () => {
+    window.open(`/activity/${activity.id}`, '_blank');
+  };
+
   return (
     <>
       {/* Overlay */}
@@ -69,13 +74,13 @@ export function ActivityDetailPanel({
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="sticky top-0 bg-white border-b border-border p-6 flex items-center justify-between">
+        <div className="sticky top-0 bg-white border-b border-border px-6 py-5 flex items-center justify-between">
           <h2 className="text-xl font-headline font-semibold text-text-primary">
             Edit Activity
           </h2>
           <button
             onClick={onClose}
-            className="text-text-secondary hover:text-text-primary transition-colors"
+            className="p-1 text-text-secondary hover:text-text-primary transition-colors"
             aria-label="Close panel"
           >
             <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -85,7 +90,26 @@ export function ActivityDetailPanel({
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
+        <form onSubmit={handleSubmit} className="p-6 space-y-5">
+          {/* Activity Type */}
+          <div>
+            <label className="block text-sm font-medium text-text-primary mb-2">
+              Activity Type
+            </label>
+            <select
+              className="input"
+              value={formData.activityType || ''}
+              onChange={(e) => setFormData({ ...formData, activityType: e.target.value as ActivityType })}
+            >
+              <option value="">Select activity type</option>
+              {Object.entries(ACTIVITY_TYPE_INFO).map(([key, info]) => (
+                <option key={key} value={key}>
+                  {info.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
           {/* Date */}
           <div>
             <label className="block text-sm font-medium text-text-primary mb-2">
@@ -100,65 +124,54 @@ export function ActivityDetailPanel({
             />
           </div>
 
-          {/* Funnel Stage */}
-          <div>
-            <label className="block text-sm font-medium text-text-primary mb-2">
-              Funnel Stage
-            </label>
-            <div className="grid grid-cols-2 gap-2">
-              {Object.entries(FUNNEL_STAGES).map(([stage, info]) => (
-                <button
-                  key={stage}
-                  type="button"
-                  onClick={() => setFormData({ ...formData, funnelStage: stage as FunnelStage })}
-                  className="p-3 rounded-lg border-2 text-sm font-medium transition-all text-left"
-                  style={{
-                    backgroundColor: formData.funnelStage === stage ? info.color : 'white',
-                    borderColor: info.color,
-                    color: formData.funnelStage === stage ? '#FFFFFF' : 'var(--color-text-primary)',
-                  }}
-                >
-                  <div className="flex items-center gap-2">
-                    <span>{info.emoji}</span>
-                    <span>{info.name}</span>
-                  </div>
-                </button>
-              ))}
+          {/* Funnel Stage & Platform - Side by side */}
+          <div className="grid grid-cols-2 gap-3">
+            {/* Funnel Stage */}
+            <div>
+              <label className="block text-sm font-medium text-text-primary mb-2">
+                Funnel Stage
+              </label>
+              <select
+                className="input"
+                value={formData.funnelStage || ''}
+                onChange={(e) => setFormData({ ...formData, funnelStage: e.target.value as FunnelStage })}
+                required
+              >
+                <option value="">Select stage</option>
+                {Object.entries(FUNNEL_STAGES).map(([key, info]) => (
+                  <option key={key} value={key}>
+                    {info.name}
+                  </option>
+                ))}
+              </select>
             </div>
-          </div>
 
-          {/* Platform */}
-          <div>
-            <label className="block text-sm font-medium text-text-primary mb-2">
-              Platform
-            </label>
-            <select
-              className="input"
-              value={formData.platform || ''}
-              onChange={(e) => setFormData({ ...formData, platform: e.target.value as Platform })}
-              required
-            >
-              <option value="">Select platform</option>
-              {Object.entries(PLATFORM_INFO).map(([key, info]) => (
-                <option key={key} value={key}>
-                  {info.icon} {info.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Content Pillar */}
-          <div>
-            <label className="block text-sm font-medium text-text-primary mb-2">
-              Content Pillar (optional)
-            </label>
-            <input
-              type="text"
-              className="input"
-              placeholder="e.g., Education, Behind-the-scenes"
-              value={formData.contentPillar || ''}
-              onChange={(e) => setFormData({ ...formData, contentPillar: e.target.value })}
-            />
+            {/* Channel */}
+            <div>
+              <label className="block text-sm font-medium text-text-primary mb-2">
+                Channel
+              </label>
+              <div className="relative">
+                <select
+                  className="input pl-10"
+                  value={formData.platform || ''}
+                  onChange={(e) => setFormData({ ...formData, platform: e.target.value as Platform })}
+                  required
+                >
+                  <option value="">Select</option>
+                  {Object.entries(CHANNEL_INFO).map(([key, info]) => (
+                    <option key={key} value={key}>
+                      {info.name}
+                    </option>
+                  ))}
+                </select>
+                {formData.platform && (
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-lg">
+                    {CHANNEL_INFO[formData.platform]?.icon}
+                  </span>
+                )}
+              </div>
+            </div>
           </div>
 
           {/* Title */}
@@ -183,7 +196,7 @@ export function ActivityDetailPanel({
             </label>
             <textarea
               className="textarea"
-              rows={6}
+              rows={4}
               placeholder="Write your content here..."
               value={formData.content || ''}
               onChange={(e) => setFormData({ ...formData, content: e.target.value })}
@@ -191,12 +204,14 @@ export function ActivityDetailPanel({
           </div>
 
           {/* AI Generation Buttons */}
-          <div className="flex gap-2">
-            <button type="button" className="btn-secondary flex-1 text-sm">
-              ✨ Generate with AI
+          <div className="flex gap-3">
+            <button type="button" className="btn-secondary flex-1 text-sm flex items-center justify-center gap-2">
+              <iconify-icon icon="lucide:sparkles" width="16" height="16"></iconify-icon>
+              Generate with AI
             </button>
-            <button type="button" className="btn-secondary flex-1 text-sm">
-              📄 Use Template
+            <button type="button" className="btn-secondary flex-1 text-sm flex items-center justify-center gap-2">
+              <iconify-icon icon="lucide:file-text" width="16" height="16"></iconify-icon>
+              Use Template
             </button>
           </div>
 
@@ -205,40 +220,49 @@ export function ActivityDetailPanel({
             <label className="block text-sm font-medium text-text-primary mb-2">
               Status
             </label>
-            <div className="flex gap-2 flex-wrap">
-              {(['idea', 'draft', 'ready', 'complete'] as ActivityStatus[]).map((status) => (
-                <button
-                  key={status}
-                  type="button"
-                  onClick={() => setFormData({ ...formData, status })}
-                  className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
-                    formData.status === status
-                      ? 'bg-teal-dark text-white'
-                      : 'bg-cream-dark text-text-secondary hover:bg-cream'
-                  }`}
-                >
-                  {status === 'idea' && '○'}
-                  {status === 'draft' && '●'}
-                  {status === 'ready' && '●'}
-                  {status === 'complete' && '✓'}
-                  {' '}
-                  {status.charAt(0).toUpperCase() + status.slice(1)}
-                </button>
+            <select
+              className="input"
+              value={formData.status || ''}
+              onChange={(e) => setFormData({ ...formData, status: e.target.value as ActivityStatus })}
+              required
+            >
+              <option value="">Select status</option>
+              {Object.entries(STATUS_INFO).map(([key, info]) => (
+                <option key={key} value={key}>
+                  {info.name}
+                </option>
               ))}
-            </div>
+            </select>
+          </div>
+
+          {/* Open full view window */}
+          <div className="flex items-center justify-between py-2">
+            <label className="text-sm font-medium text-text-primary">
+              Open full view window
+            </label>
+            <button
+              type="button"
+              onClick={handleOpenFullEditor}
+              className="p-2 text-text-secondary hover:text-burgundy hover:bg-cream-dark rounded-lg transition-colors"
+              aria-label="Open in new window"
+              title="Open full editor in new tab"
+            >
+              <iconify-icon icon="lucide:external-link" width="20" height="20"></iconify-icon>
+            </button>
           </div>
 
           {/* Action Buttons */}
           <div className="flex gap-3 pt-4 border-t border-border">
-            <button type="submit" className="btn-primary flex-1">
-              Save Changes
-            </button>
             <button
               type="button"
               onClick={handleDelete}
-              className="btn-ghost text-error hover:bg-error-light"
+              className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-border text-error hover:bg-error-light transition-colors"
             >
-              🗑️ Delete
+              <iconify-icon icon="lucide:trash-2" width="18" height="18"></iconify-icon>
+              Delete
+            </button>
+            <button type="submit" className="btn-primary flex-1">
+              Save Changes
             </button>
           </div>
         </form>

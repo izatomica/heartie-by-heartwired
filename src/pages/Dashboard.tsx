@@ -14,12 +14,12 @@ export function Dashboard() {
     return weekActivities.filter((activity) => {
       const activityDate = new Date(activity.date);
       activityDate.setHours(0, 0, 0, 0);
-      return activityDate.getTime() === today.getTime() && activity.status !== 'complete';
+      return activityDate.getTime() === today.getTime() && activity.status !== 'done';
     });
   }, [weekActivities]);
 
-  const completedCount = weekActivities.filter((a) => a.status === 'complete').length;
-  const remainingCount = weekActivities.filter((a) => a.status !== 'complete').length;
+  const completedCount = weekActivities.filter((a) => a.status === 'done').length;
+  const remainingCount = weekActivities.filter((a) => a.status !== 'done').length;
 
   const currentDate = new Date().toLocaleDateString('en-US', {
     month: 'long',
@@ -128,7 +128,7 @@ export function Dashboard() {
               const badgeClass =
                 activity.status === 'idea'
                   ? 'badge-idea'
-                  : activity.status === 'draft'
+                  : activity.status === 'in_progress'
                   ? 'badge-draft'
                   : 'badge-ready';
 

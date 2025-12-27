@@ -1,8 +1,22 @@
 // Activity Types
 export type FunnelStage = 'awareness' | 'consideration' | 'conversion' | 'retention';
-export type ActivityStatus = 'idea' | 'draft' | 'ready' | 'scheduled' | 'running' | 'complete';
+export type ActivityStatus = 'idea' | 'in_progress' | 'scheduled' | 'running' | 'done';
 // Channel type (formerly Platform)
 export type Platform = 'instagram' | 'facebook' | 'tiktok' | 'x' | 'linkedin' | 'email' | 'blog' | 'meta_ads' | 'google_ads' | 'tiktok_ads' | 'x_ads' | 'other';
+// Activity Type (content format)
+export type ActivityType =
+  | 'static_image'
+  | 'text_content'
+  | 'carousel'
+  | 'video'
+  | 'podcast'
+  | 'webinar'
+  | 'newsletter'
+  | 'sales_emails'
+  | 'strategy_tasks'
+  | 'ads'
+  | 'organic_campaign'
+  | 'ads_campaign';
 
 export interface Activity {
   id: string;
@@ -12,6 +26,7 @@ export interface Activity {
   content: string;
   funnelStage: FunnelStage;
   platform: Platform;
+  activityType?: ActivityType;
   contentPillar?: string;
   status: ActivityStatus;
   linkedWeeklyGoalId?: string;
@@ -253,3 +268,28 @@ export const CHANNEL_INFO: Record<Platform, { name: string; icon: string }> = {
 
 // Keep PLATFORM_INFO as alias for backwards compatibility
 export const PLATFORM_INFO = CHANNEL_INFO;
+
+// Activity Type Display Info
+export const ACTIVITY_TYPE_INFO: Record<ActivityType, { name: string; icon: string }> = {
+  static_image: { name: 'Static Image Content', icon: 'lucide:image' },
+  text_content: { name: 'Text Content', icon: 'lucide:file-text' },
+  carousel: { name: 'Carousel', icon: 'lucide:gallery-horizontal' },
+  video: { name: 'Video', icon: 'lucide:video' },
+  podcast: { name: 'Podcast', icon: 'lucide:mic' },
+  webinar: { name: 'Webinar', icon: 'lucide:presentation' },
+  newsletter: { name: 'Newsletter', icon: 'lucide:mail' },
+  sales_emails: { name: 'Sales Emails', icon: 'lucide:send' },
+  strategy_tasks: { name: 'Strategy Tasks', icon: 'lucide:clipboard-list' },
+  ads: { name: 'Ads', icon: 'lucide:megaphone' },
+  organic_campaign: { name: 'Organic Campaign', icon: 'lucide:trending-up' },
+  ads_campaign: { name: 'Ads Campaign', icon: 'lucide:target' },
+};
+
+// Activity Status Display Info
+export const STATUS_INFO: Record<ActivityStatus, { name: string; color: string }> = {
+  idea: { name: 'Idea', color: '#E5E5E5' },
+  in_progress: { name: 'In progress', color: '#EECE7B' },
+  scheduled: { name: 'Scheduled', color: '#9DCDB5' },
+  running: { name: 'Running', color: '#B7D9FF' },
+  done: { name: 'Done', color: '#C4A484' },
+};

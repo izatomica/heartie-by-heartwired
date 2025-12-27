@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from './contexts/AuthContext';
 import { Layout } from './components/layout/Layout';
 import { Onboarding } from './components/Onboarding';
@@ -18,6 +18,7 @@ import { Strategy } from './pages/Strategy';
 import { Templates } from './pages/Templates';
 import { Insights } from './pages/Insights';
 import { ProfileSettings } from './pages/settings/ProfileSettings';
+import { ActivityEditor } from './pages/ActivityEditor';
 
 // Loading spinner component
 function LoadingScreen() {
@@ -123,8 +124,12 @@ function App() {
   // Authenticated and onboarding complete - show app
   return (
     <BrowserRouter>
-      <Layout>
-        <Routes>
+      <Routes>
+        {/* Full-page editor - outside Layout for focused editing */}
+        <Route path="/activity/:id" element={<ProtectedRoute><ActivityEditor /></ProtectedRoute>} />
+
+        {/* All other routes inside Layout */}
+        <Route element={<Layout><Outlet /></Layout>}>
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
           <Route path="/calendar" element={<ProtectedRoute><Calendar /></ProtectedRoute>} />
@@ -138,8 +143,8 @@ function App() {
           <Route path="/signup" element={<Navigate to="/dashboard" replace />} />
           <Route path="/login" element={<Navigate to="/dashboard" replace />} />
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
-        </Routes>
-      </Layout>
+        </Route>
+      </Routes>
       <SupabaseHealthIndicator />
     </BrowserRouter>
   );

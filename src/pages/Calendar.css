@@ -420,7 +420,7 @@
 }
 
 .day-column-over {
-  background: rgba(255, 228, 216, 0.5);
+  background: rgba(241, 232, 215, 0.7);
 }
 
 .day-cell {
@@ -428,16 +428,11 @@
   border-bottom: 0.5px solid #2b2b23;
   padding: 4px;
   position: relative;
-  transition: background 0.2s;
   display: block;
 }
 
-.day-cell:hover {
-  background: #ffe4d8;
-}
-
 .day-cell-over {
-  background: #ffe4d8;
+  background: #f1e8d7;
 }
 
 .empty-drop-zone {
@@ -452,7 +447,7 @@
 
 .empty-drop-zone.day-cell-over {
   border-color: #115059;
-  background: rgba(255, 228, 216, 0.7);
+  background: rgba(241, 232, 215, 0.9);
 }
 
 .empty-drop-hint {
@@ -487,6 +482,13 @@
   justify-content: space-between;
   height: 100%;
   overflow: hidden;
+  transition: transform 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.activity-card:hover {
+  transform: scale(1.02);
+  background: #e8dcc8;
+  box-shadow: 0 2px 8px rgba(43, 43, 35, 0.12);
 }
 
 .activity-card[data-stage="awareness"] {

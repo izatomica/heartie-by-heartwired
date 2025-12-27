@@ -17,8 +17,8 @@ import { DndContext, DragOverlay, useSensor, useSensors, PointerSensor, useDropp
 import type { DragEndEvent, DragStartEvent } from '@dnd-kit/core';
 import { SortableContext, useSortable, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import type { Activity, FunnelStage, Platform, ActivityStatus, Campaign } from '../types';
-import { FUNNEL_STAGES, PLATFORM_INFO } from '../types';
+import type { Activity, FunnelStage, Platform, ActivityStatus, ActivityType, Campaign } from '../types';
+import { FUNNEL_STAGES, PLATFORM_INFO, ACTIVITY_TYPE_INFO } from '../types';
 import { mockActivities, mockCampaigns } from '../lib/mockData';
 import { ActivityDetailPanel } from '../components/calendar/ActivityDetailPanel';
 import { AddActivityModal } from '../components/calendar/AddActivityModal';
@@ -133,11 +133,10 @@ const platformIcons = channelIcons;
 // Status labels mapping
 const statusLabels: Record<ActivityStatus, string> = {
   idea: 'Idea',
-  draft: 'In progress',
-  ready: 'In progress',
+  in_progress: 'In progress',
   scheduled: 'Scheduled',
   running: 'Running',
-  complete: 'Done',
+  done: 'Done',
 };
 
 // List view column definitions
@@ -150,10 +149,10 @@ type ListColumn = {
 
 const listColumns: ListColumn[] = [
   { id: 'idea', label: 'Idea', color: '#B3B3B0', statuses: ['idea'] },
-  { id: 'in_progress', label: 'In progress', color: '#FBCB6E', statuses: ['draft', 'ready'] },
+  { id: 'in_progress', label: 'In progress', color: '#FBCB6E', statuses: ['in_progress'] },
   { id: 'scheduled', label: 'Scheduled', color: '#B1D1A0', statuses: ['scheduled'] },
   { id: 'running', label: 'Running', color: '#B6BBFB', statuses: ['running'] },
-  { id: 'done', label: 'Done', color: '#6E213B', statuses: ['complete'] },
+  { id: 'done', label: 'Done', color: '#6E213B', statuses: ['done'] },
 ];
 
 // Activity Card Component
@@ -256,7 +255,7 @@ export function Calendar() {
   const [selectedFunnelStage, setSelectedFunnelStage] = useState<FunnelStage | 'all'>('all');
   const [selectedPlatform, setSelectedPlatform] = useState<Platform | 'all'>('all');
   const [selectedStatus, setSelectedStatus] = useState<ActivityStatus | 'all'>('all');
-  const [selectedContentPillar, setSelectedContentPillar] = useState<string | 'all'>('all');
+  const [selectedActivityType, setSelectedActivityType] = useState<ActivityType | 'all'>('all');
 
   // Dropdown open states
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
@@ -305,10 +304,10 @@ export function Calendar() {
       if (selectedFunnelStage !== 'all' && activity.funnelStage !== selectedFunnelStage) return false;
       if (selectedPlatform !== 'all' && activity.platform !== selectedPlatform) return false;
       if (selectedStatus !== 'all' && activity.status !== selectedStatus) return false;
-      if (selectedContentPillar !== 'all' && activity.contentPillar !== selectedContentPillar) return false;
+      if (selectedActivityType !== 'all' && activity.activityType !== selectedActivityType) return false;
       return true;
     });
-  }, [activities, selectedFunnelStage, selectedPlatform, selectedStatus, selectedContentPillar]);
+  }, [activities, selectedFunnelStage, selectedPlatform, selectedStatus, selectedActivityType]);
 
   const getActivitiesForDay = useCallback((day: Date) => {
     return filteredActivities.filter((activity) => isSameDay(new Date(activity.date), day));
@@ -562,9 +561,9 @@ export function Calendar() {
 
   // Extract unique activity types from visible activities for dynamic dropdown
   const visibleActivityTypes = useMemo(() => {
-    const types = new Set<string>();
+    const types = new Set<ActivityType>();
     visiblePeriodActivities.forEach(a => {
-      if (a.contentPillar) types.add(a.contentPillar);
+      if (a.activityType) types.add(a.activityType);
     });
     return Array.from(types);
   }, [visiblePeriodActivities]);
@@ -836,14 +835,14 @@ export function Calendar() {
               className={`select-filter ${openDropdown === 'activityType' ? 'open' : ''}`}
               onClick={() => setOpenDropdown(openDropdown === 'activityType' ? null : 'activityType')}
             >
-              <span>{selectedContentPillar === 'all' ? 'All activity types' : selectedContentPillar}</span>
+              <span>{selectedActivityType === 'all' ? 'All activity types' : ACTIVITY_TYPE_INFO[selectedActivityType].name}</span>
               <iconify-icon icon="lucide:chevron-down" style={{ fontSize: '14px' }} />
             </div>
             {openDropdown === 'activityType' && (
               <div className="filter-dropdown-menu">
                 <div
-                  className={`filter-dropdown-item ${selectedContentPillar === 'all' ? 'selected' : ''}`}
-                  onClick={() => { setSelectedContentPillar('all'); setOpenDropdown(null); }}
+                  className={`filter-dropdown-item ${selectedActivityType === 'all' ? 'selected' : ''}`}
+                  onClick={() => { setSelectedActivityType('all'); setOpenDropdown(null); }}
                 >
                   All activity types
                 </div>
@@ -851,10 +850,11 @@ export function Calendar() {
                   visibleActivityTypes.map((type) => (
                     <div
                       key={type}
-                      className={`filter-dropdown-item ${selectedContentPillar === type ? 'selected' : ''}`}
-                      onClick={() => { setSelectedContentPillar(type); setOpenDropdown(null); }}
+                      className={`filter-dropdown-item ${selectedActivityType === type ? 'selected' : ''}`}
+                      onClick={() => { setSelectedActivityType(type); setOpenDropdown(null); }}
                     >
-                      {type}
+                      <iconify-icon icon={ACTIVITY_TYPE_INFO[type].icon} style={{ fontSize: '14px' }} />
+                      {ACTIVITY_TYPE_INFO[type].name}
                     </div>
                   ))
                 ) : (
@@ -954,13 +954,12 @@ export function Calendar() {
                   >
                     All statuses
                   </div>
-                  {/* Show unique status options - draft/ready both map to 'In progress' */}
                   {[
                     { status: 'idea' as ActivityStatus, label: 'Idea', color: 'idea' },
-                    { status: 'draft' as ActivityStatus, label: 'In progress', color: 'draft' },
+                    { status: 'in_progress' as ActivityStatus, label: 'In progress', color: 'in_progress' },
                     { status: 'scheduled' as ActivityStatus, label: 'Scheduled', color: 'scheduled' },
                     { status: 'running' as ActivityStatus, label: 'Running', color: 'running' },
-                    { status: 'complete' as ActivityStatus, label: 'Done', color: 'complete' },
+                    { status: 'done' as ActivityStatus, label: 'Done', color: 'done' },
                   ].map((item) => (
                     <div
                       key={item.status}
@@ -998,7 +997,10 @@ export function Calendar() {
                     {weekDays.map((day) => {
                       const isToday = isSameDay(day, new Date());
                       return (
-                        <div key={day.toISOString()} className={`day-header ${isToday ? 'today' : ''}`}>
+                        <div
+                          key={day.toISOString()}
+                          className={`day-header ${isToday ? 'today' : ''}`}
+                        >
                           <div className="day-header-name">{format(day, 'EEE')}</div>
                           <div className="day-header-date">{format(day, 'd')}</div>
                         </div>
