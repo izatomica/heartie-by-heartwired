@@ -22,12 +22,8 @@ const toolNavItems = [
 
 export function Layout({ children }: LayoutProps) {
   const location = useLocation();
-  const { user, signOut } = useAuth();
+  const { signOut } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
-  const userInitial = user?.displayName?.charAt(0).toUpperCase() ||
-    user?.email?.charAt(0).toUpperCase() ||
-    'U';
 
   const handleSignOut = async () => {
     await signOut();
@@ -110,39 +106,15 @@ export function Layout({ children }: LayoutProps) {
 
           {/* New Idea Button */}
           <button className="sidebar-new-idea">
-            <iconify-icon icon="mdi:plus" width="16" height="16" />
+            <iconify-icon icon="mdi:creation" width="16" height="16" />
             New idea
           </button>
 
-          {/* Footer with User */}
+          {/* Footer */}
           <div className="sidebar-footer">
-            <Link
-              to="/settings/profile"
-              className="sidebar-user"
-              onClick={closeMobileMenu}
-            >
-              {user?.profilePhotoUrl ? (
-                <img
-                  src={user.profilePhotoUrl}
-                  alt={user.displayName || 'Profile'}
-                  className="sidebar-user-avatar"
-                  style={{ objectFit: 'cover' }}
-                />
-              ) : (
-                <div className="sidebar-user-avatar">
-                  {userInitial}
-                </div>
-              )}
-              <div className="sidebar-user-info">
-                <div className="sidebar-user-name">{user?.displayName || 'User'}</div>
-                <div className="sidebar-user-email">{user?.email || ''}</div>
-              </div>
-            </Link>
-
             <button
               className="sidebar-nav-item"
               onClick={handleSignOut}
-              style={{ marginTop: '8px' }}
             >
               <iconify-icon icon="mdi:logout" width="18" height="18" />
               Log out

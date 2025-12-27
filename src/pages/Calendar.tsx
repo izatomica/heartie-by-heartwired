@@ -7,8 +7,9 @@ import {
   subWeeks,
   isSameDay,
 } from 'date-fns';
-import { DndContext, DragOverlay, useSensor, useSensors, PointerSensor, useDroppable, useDraggable } from '@dnd-kit/core';
+import { DndContext, DragOverlay, useSensor, useSensors, PointerSensor, useDroppable } from '@dnd-kit/core';
 import type { DragEndEvent, DragStartEvent } from '@dnd-kit/core';
+import { SortableContext, useSortable, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import type { Activity, FunnelStage, Platform, ActivityStatus } from '../types';
 import { FUNNEL_STAGES, PLATFORM_INFO } from '../types';
@@ -20,15 +21,18 @@ import './Calendar.css';
 type LayoutView = 'calendar' | 'list' | 'funnel';
 type PeriodView = 'day' | 'week' | 'month';
 
-// Draggable Activity Card wrapper
-function DraggableActivityCard({ activity, children }: { activity: Activity; children: React.ReactNode }) {
-  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
+// Sortable Activity Card wrapper - supports both reordering within column and moving between columns
+function SortableActivityCard({ activity, children }: { activity: Activity; children: React.ReactNode }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: activity.id,
+    data: { activity },
   });
 
   const style = {
     transform: CSS.Transform.toString(transform),
+    transition,
     opacity: isDragging ? 0.5 : 1,
+    zIndex: isDragging ? 100 : 1,
   };
 
   return (
@@ -39,7 +43,7 @@ function DraggableActivityCard({ activity, children }: { activity: Activity; chi
 }
 
 // Droppable Day Cell wrapper
-function DroppableDayCell({ dayKey, rowIndex, children }: { dayKey: string; rowIndex: number; children: React.ReactNode }) {
+function DroppableDayCell({ dayKey, rowIndex, children }: { dayKey: string; rowIndex: number; children?: React.ReactNode }) {
   const { setNodeRef, isOver } = useDroppable({
     id: `${dayKey}-row-${rowIndex}`,
     data: { dayKey, rowIndex },
@@ -207,10 +211,15 @@ export function Calendar() {
 
     if (!over) return;
 
-    const activityId = active.id.toString();
-    const overIdStr = over.id.toString();
+    const activeId = active.id.toString();
+    const overId = over.id.toString();
 
-    const dayKeyMatch = overIdStr.match(/^(.+)-row-\d+$/);
+    // Find the dragged activity
+    const draggedActivity = activities.find(a => a.id === activeId);
+    if (!draggedActivity) return;
+
+    // Check if dropping on a day cell (empty slot)
+    const dayKeyMatch = overId.match(/^(.+)-row-\d+$/);
     if (dayKeyMatch) {
       const dayKey = dayKeyMatch[1];
       const newDate = new Date(dayKey);
@@ -218,7 +227,46 @@ export function Calendar() {
       if (!isNaN(newDate.getTime())) {
         setActivities((prev) =>
           prev.map((activity) =>
-            activity.id === activityId
+            activity.id === activeId
+              ? { ...activity, date: newDate }
+              : activity
+          )
+        );
+      }
+      return;
+    }
+
+    // Check if dropping on another activity (reorder or move)
+    const overActivity = activities.find(a => a.id === overId);
+    if (overActivity) {
+      const draggedDate = new Date(draggedActivity.date).toDateString();
+      const overDate = new Date(overActivity.date).toDateString();
+
+      if (draggedDate === overDate) {
+        // Same day - reorder within column
+        const dayActivities = activities.filter(a =>
+          new Date(a.date).toDateString() === draggedDate
+        );
+        const oldIndex = dayActivities.findIndex(a => a.id === activeId);
+        const newIndex = dayActivities.findIndex(a => a.id === overId);
+
+        if (oldIndex !== -1 && newIndex !== -1 && oldIndex !== newIndex) {
+          const reordered = arrayMove(dayActivities, oldIndex, newIndex);
+
+          // Update the main activities array with new order
+          setActivities((prev) => {
+            const otherActivities = prev.filter(a =>
+              new Date(a.date).toDateString() !== draggedDate
+            );
+            return [...otherActivities, ...reordered];
+          });
+        }
+      } else {
+        // Different day - move to the target day
+        const newDate = new Date(overActivity.date);
+        setActivities((prev) =>
+          prev.map((activity) =>
+            activity.id === activeId
               ? { ...activity, date: newDate }
               : activity
           )
@@ -407,24 +455,31 @@ export function Calendar() {
                 {weekDays.map((day) => {
                   const dayKey = day.toISOString();
                   const dayActivities = getActivitiesForDay(day);
+                  const activityIds = dayActivities.map(a => a.id);
 
                   return (
                     <div key={dayKey} className="day-column">
-                      {Array.from({ length: 6 }, (_, rowIndex) => {
-                        const activity = dayActivities[rowIndex];
-                        return (
-                          <DroppableDayCell key={`${dayKey}-row-${rowIndex}`} dayKey={dayKey} rowIndex={rowIndex}>
-                            {activity && (
-                              <DraggableActivityCard activity={activity}>
-                                <ActivityCard
-                                  activity={activity}
-                                  onClick={() => handleActivityClick(activity)}
-                                />
-                              </DraggableActivityCard>
-                            )}
+                      <SortableContext items={activityIds} strategy={verticalListSortingStrategy}>
+                        {/* Render activities */}
+                        {dayActivities.map((activity, index) => (
+                          <DroppableDayCell key={`${dayKey}-row-${index}`} dayKey={dayKey} rowIndex={index}>
+                            <SortableActivityCard activity={activity}>
+                              <ActivityCard
+                                activity={activity}
+                                onClick={() => handleActivityClick(activity)}
+                              />
+                            </SortableActivityCard>
                           </DroppableDayCell>
-                        );
-                      })}
+                        ))}
+                        {/* Empty drop zones for remaining slots */}
+                        {Array.from({ length: Math.max(0, 6 - dayActivities.length) }, (_, i) => (
+                          <DroppableDayCell
+                            key={`${dayKey}-row-${dayActivities.length + i}`}
+                            dayKey={dayKey}
+                            rowIndex={dayActivities.length + i}
+                          />
+                        ))}
+                      </SortableContext>
                     </div>
                   );
                 })}
